@@ -456,6 +456,85 @@ QScrollArea {
 }
 
 /* ═══════════════════════════════════════════════════════
+   KPI DASHBOARD CARDS
+═══════════════════════════════════════════════════════ */
+QFrame#kpiCard {
+    background-color: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 12px;
+}
+
+QFrame#kpiCard:hover {
+    border-color: #6366f1;
+    background-color: #243147;
+}
+
+QLabel#kpiVal {
+    font-size: 22px;
+    font-weight: bold;
+    color: #f8fafc;
+}
+
+QLabel#kpiTitle {
+    font-size: 11px;
+    color: #94a3b8;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+QLabel#kpiIcon {
+    font-size: 24px;
+}
+
+/* ═══════════════════════════════════════════════════════
+   LIST ITEMS / TABLE ROWS
+═══════════════════════════════════════════════════════ */
+QFrame#listItemRow {
+    background-color: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 8px;
+}
+
+QFrame#listItemRow:hover {
+    border-color: #6366f1;
+    background-color: #1e293b;
+}
+
+QFrame#listItemRowSelected {
+    background-color: #1e293b;
+    border: 1.5px solid #6366f1;
+    border-radius: 8px;
+}
+
+QLabel#badge {
+    background-color: #334155;
+    color: #e2e8f0;
+    border-radius: 4px;
+    padding: 3px 8px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+QLabel#badgeAccent {
+    background-color: #312e81;
+    color: #c7d2fe;
+    border-radius: 4px;
+    padding: 3px 8px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+QLabel#badgeSuccess {
+    background-color: #064e3b;
+    color: #a7f3d0;
+    border-radius: 4px;
+    padding: 3px 8px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+/* ═══════════════════════════════════════════════════════
    MESSAGE BOX
 ═══════════════════════════════════════════════════════ */
 QMessageBox {
