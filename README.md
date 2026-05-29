@@ -1,136 +1,104 @@
-# # Brain Tumor Detection Desktop Application
+# Neural Diagnostics - Clinical AI Suite
 
-An offline desktop application for brain tumor detection from MRI images using EfficientNet-B0 deep learning model with Grad-CAM explainability.
+An enterprise-grade, offline desktop application for clinical brain tumor detection from MRI images. Built with PyQt6 and powered by an EfficientNet-B0 deep learning model, this suite offers real-time Grad-CAM explainability, secure clinical authentication, and comprehensive patient reporting.
 
 ## ⚠️ Disclaimer
 
-**This system is for research and educational purposes only. It is not intended for clinical use or medical diagnosis.**
+**This system is for research and educational purposes only. It is not intended for clinical use, automated medical diagnosis, or replacing professional medical consultation.**
 
-## Features
+---
 
-- ✅ Fully offline operation (no internet required)
-- 🧠 EfficientNet-B0 model with transfer learning
-- 🔍 Binary classification: Tumor / No Tumor
-- 📊 Prediction confidence scores
-- 🎨 Grad-CAM heatmap visualization for explainability
-- 💻 CPU-only inference
-- 🖥️ Simple and professional Tkinter UI
+## 🌟 Key Features
 
-## Requirements
+- **✅ Deep Learning Diagnostics**: EfficientNet-B0 model using transfer learning for accurate binary classification (Tumor / No Tumor).
+- **🔍 Explainable AI (XAI)**: Integrated Grad-CAM heatmap visualization to pinpoint diagnostic regions of interest.
+- **🖥️ Premium UI Architecture**: A sleek, dark-mode clinical dashboard built on **PyQt6**, featuring responsive 50/50 split-screens and medical iconography.
+- **🔐 Clinical Security & Authentication**: Secure user login, hashed passwords, and system administrator controls to revoke access.
+- **📜 Comprehensive Audit Logging**: Background tracking of all staff portal logins, patient intake events, and system interactions.
+- **📄 Automated Medical Reporting**: Generate professional, printable PDF clinical reports complete with MRI images, Grad-CAM overlays, and examiner signatures.
+- **📊 Hospital Analytics**: Built-in KPI metrics to track active rosters, completed scans, and pending diagnostics.
 
-- Python 3.9 or higher
-- TensorFlow (CPU version)
-- NumPy
+---
+
+## 🛠️ System Architecture
+
+The application operates on a highly organized, scalable **14-module architecture** divided into 5 specialized domains:
+
+### Root Execution
+- `app.py`: The main entry point that boots the engine and initializes audit telemetry.
+- `theme.py`: Global QSS stylesheet repository dictating the dark-mode aesthetic tokens.
+
+### User Interface (`/ui`)
+- `ui_login.py`: Secure entry portal with dynamically rendered MRI background.
+- `ui_main.py`: Overarching dashboard framework and primary clinical navigation sidebar.
+- `ui_pages.py`: Multi-page controller handling Patient Selection, Intake, Settings, System Admin, and Analytics.
+- `ui_analysis.py`: Complex MRI diagnostic workspace and side-by-side inference viewer.
+- `ui_history.py`: Patient record timeline, past examination viewer, and PDF generator trigger.
+
+### Core Services (`/core`)
+- `database.py`: SQLite engine handling examiner auth, access control flags, patient records, and scan history.
+- `audit_logger.py`: Security tracker ensuring HIPAA-aligned action recording.
+- `config_registry.py`: System state manager for environmental thresholds.
+
+### AI Engine (`/engine`)
+- `inference.py`: Model loader and real-time inference execution logic.
+- `gradcam.py`: Generates the thermal heatmap diagnostic overlays.
+- `utils.py`: Auxiliary image pre-processing scripts.
+
+### Reporting (`/reporting`)
+- `reporting.py`: Dedicated PDF compiler utilizing ReportLab for clinical document generation.
+
+---
+
+## 💻 Requirements
+
+- Python 3.10+
+- PyQt6
+- TensorFlow (CPU version optimized)
 - OpenCV
 - Pillow
+- ReportLab
 
-## Installation
+## 🚀 Installation & Setup
 
-1. **Clone or download this repository**
+1. **Clone the repository**
 
 2. **Install dependencies**
-
    ```bash
    pip install -r requirements.txt
    ```
 
-3. **Ensure model is in place**
-   Make sure your trained model is located at:
-   ```
+3. **Verify the ML Model**
+   Ensure your trained `.keras` or `.h5` model is correctly located at:
+   ```text
    models/efficientnet_b0_brain_tumor_model/
    ```
 
-## Usage
+4. **Launch the Application**
+   ```bash
+   python app.py
+   ```
 
-Run the application:
+*Note: On the first launch, the SQLite database (`clinic.db`) will automatically initialize and a default `admin` profile will be generated for system access.*
 
-```bash
-python app.py
-```
+---
 
-### How to Use the Application:
+## 🧑‍⚕️ Usage Guide
 
-1. Click **"Load MRI Image"** to select an MRI scan (PNG, JPG, or JPEG)
-2. Click **"Run Analysis"** to perform tumor detection
-3. View results:
-   - **Original Image**: Your input MRI scan
-   - **Prediction**: Tumor or No Tumor with confidence score
-   - **Grad-CAM Heatmap**: Visual explanation showing regions of interest
+1. **Secure Login**: Use authorized credentials to access the Clinical AI Suite.
+2. **Register Patients**: Use the Patient Selection dashboard to intake new records.
+3. **Run Diagnostics**: Navigate to an active patient profile, upload an MRI scan (PNG/JPG), and click "Initiate Neural Network Analysis".
+4. **Review Results**: Examine the original scan alongside the Grad-CAM thermal overlay to determine physiological anomalies.
+5. **Export Documentation**: Navigate to Patient History and generate a comprehensive PDF medical report.
+6. **System Administration**: (Admins Only) Add new clinical staff, assign departments, or instantly revoke access for offboarded employees.
 
-## Project Structure
+---
 
-```
-brain_tumor_app/
-├── app.py                          # Main application (Tkinter UI)
-├── inference.py                    # Model loading and inference
-├── gradcam.py                      # Grad-CAM generation
-├── utils.py                        # Image preprocessing utilities
-├── requirements.txt                # Python dependencies
-├── README.md                       # This file
-├── models/
-│   └── efficientnet_b0_brain_tumor_model/  # Trained model
-└── assets/                         # Optional assets
-```
+## ⚖️ License & Authors
 
-## Technical Details
+This project was initially developed as a Final Year Project for Brain Tumor Detection. 
 
-### Model
-
-- **Architecture**: EfficientNet-B0
-- **Framework**: TensorFlow/Keras
-- **Input Size**: 224 × 224 × 3
-- **Output**: Binary classification (sigmoid)
-- **Transfer Learning**: Pre-trained on ImageNet
-
-### Grad-CAM
-
-- Generates heatmaps from the last convolutional layer
-- Highlights tumor regions in the MRI scan
-- Provides visual explainability for predictions
-
-### Performance
-
-- **Inference Time**: < 1 second per image (CPU)
-- **Grad-CAM Generation**: < 2 seconds (CPU)
-- **Model Loading**: Once at startup
-
-## Code Quality
-
-- Modular design with separation of concerns
-- Comprehensive docstrings
-- Exception handling
-- No hardcoded absolute paths
-- PEP 8 compliant
-
-## Supported Image Formats
-
-- PNG (.png)
-- JPEG (.jpg, .jpeg)
-
-## Troubleshooting
-
-### Model Not Found Error
-
-Ensure the model directory exists at `models/efficientnet_b0_brain_tumor_model/`
-
-### Image Loading Error
-
-Make sure your image is in a supported format (PNG, JPG, JPEG)
-
-### Slow Performance
-
-The application is optimized for CPU inference. Performance depends on your CPU speed.
-
-## License
-
-This project is for educational and research purposes only.
-
-## Authors
-
-Final Year Project - Brain Tumor Detection System
-
-## Acknowledgments
-
-- TensorFlow and Keras teams
-- EfficientNet architecture
-- Grad-CAM visualization technique
+**Acknowledgments:**
+- TensorFlow & Keras Engineering Teams
+- EfficientNet Architecture
+- Grad-CAM XAI Research
