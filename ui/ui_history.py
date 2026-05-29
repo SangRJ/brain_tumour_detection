@@ -20,87 +20,186 @@ class PatientHistoryPage(QWidget):
         lay.setContentsMargins(40, 30, 40, 30)
         lay.setSpacing(16)
 
-        # Header row
-        hdr = QHBoxLayout()
+        # Header Layout
+        info = database.get_patient_info(patient_id)
+        p_name = info[1] if info else "Unknown Patient"
+        
+        top_bar = QHBoxLayout()
         back = QPushButton("Back to Selection")
         back.setObjectName("backBtn")
         back.setCursor(Qt.CursorShape.PointingHandCursor)
         back.clicked.connect(lambda: self.mw.pop_page(self))
-        hdr.addWidget(back)
-        hdr.addStretch()
-
-        pdf_btn = QPushButton("Generate PDF Report")
+        top_bar.addWidget(back)
+        top_bar.addStretch()
+        
+        pdf_btn = QPushButton("Generate Full History PDF")
         pdf_btn.setObjectName("accentBtn")
-        pdf_btn.setMinimumHeight(40)
+        pdf_btn.setMinimumHeight(38)
         pdf_btn.clicked.connect(self._gen_pdf)
-        hdr.addWidget(pdf_btn)
-        lay.addLayout(hdr)
-
-        title = QLabel("Patient History")
-        title.setObjectName("heading")
+        top_bar.addWidget(pdf_btn)
+        lay.addLayout(top_bar)
+        
+        title = QLabel("Patient History Record")
+        title.setStyleSheet("font-size: 28px; font-weight: 700; color: white;")
         lay.addWidget(title)
-
-        # Scroll area
-        scroll = QScrollArea()
-        scroll.setWidgetResizable(True)
-        container = QWidget()
-        container.setObjectName("card")
-        self.cl = QVBoxLayout(container)
-        self.cl.setContentsMargins(20, 20, 20, 20)
-        self.cl.setSpacing(12)
+        
+        sub = QLabel(f"Past neurological scans and diagnostic timeline for {p_name}.")
+        sub.setObjectName("subtext")
+        lay.addWidget(sub)
+        lay.addSpacing(16)
 
         self.history = database.get_patient_history(patient_id)
+
+        # KPI Cards Row
+        kpi_lay = QHBoxLayout()
+        kpi_lay.setSpacing(16)
+        
+        total_scans = len(self.history)
+        tumor_count = sum(1 for e in self.history if e[2] == "Tumor")
+        normal_count = total_scans - tumor_count
+        
+        def _kpi(title, val, color):
+            c = QFrame()
+            c.setObjectName("card")
+            l = QVBoxLayout(c)
+            l.setContentsMargins(16, 12, 16, 12)
+            t = QLabel(title)
+            t.setStyleSheet(f"color: {color}; font-size: 11px; font-weight: bold; text-transform: uppercase;")
+            v = QLabel(str(val))
+            v.setStyleSheet("color: white; font-size: 24px; font-weight: bold;")
+            l.addWidget(t)
+            l.addWidget(v)
+            return c
+            
+        kpi_lay.addWidget(_kpi("Total Scans", total_scans, "#818cf8"))
+        kpi_lay.addWidget(_kpi("Tumor Detections", tumor_count, "#ef4444"))
+        kpi_lay.addWidget(_kpi("Normal Scans", normal_count, "#10b981"))
+        
+        lay.addLayout(kpi_lay)
+        lay.addSpacing(20)
+
+        # Table Wrapper
+        table_wrap = QWidget()
+        table_wrap.setObjectName("card")
+        tl = QVBoxLayout(table_wrap)
+        tl.setContentsMargins(20, 20, 20, 20)
+        tl.setSpacing(0)
+        
+        # Table Header
+        th = QHBoxLayout()
+        cols = ["SCAN DATE", "FILE NAME", "DIAGNOSTIC STATUS", "CONFIDENCE", "EXAMINER", "ACTION"]
+        widths = [140, 160, 140, 100, 140, 100]
+        for c, w in zip(cols, widths):
+            lbl = QLabel(c)
+            lbl.setStyleSheet("color: #94a3b8; font-size: 11px; font-weight: bold; text-transform: uppercase;")
+            if w > 0:
+                lbl.setFixedWidth(w)
+            th.addWidget(lbl)
+        tl.addLayout(th)
+        
+        div = QFrame()
+        div.setFixedHeight(1)
+        div.setStyleSheet("background-color: #334155; margin-top: 10px; margin-bottom: 10px;")
+        tl.addWidget(div)
+
+        # Scroll area for rows
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setStyleSheet("border: none; background: transparent;")
+        
+        self.container = QWidget()
+        self.cl = QVBoxLayout(self.container)
+        self.cl.setContentsMargins(0, 0, 0, 0)
+        self.cl.setSpacing(0)
+
         if not self.history:
             e = QLabel("No past examinations found.")
             e.setObjectName("subtext")
             e.setAlignment(Qt.AlignmentFlag.AlignCenter)
             self.cl.addWidget(e)
         else:
-            for exam in self.history:
-                self._add_card(exam)
+            for i, exam in enumerate(self.history):
+                self._add_row(exam)
+                if i < len(self.history) - 1:
+                    row_div = QFrame()
+                    row_div.setFixedHeight(1)
+                    row_div.setStyleSheet("background-color: #1e293b;")
+                    self.cl.addWidget(row_div)
 
         self.cl.addStretch()
-        scroll.setWidget(container)
-        lay.addWidget(scroll)
+        scroll.setWidget(self.container)
+        tl.addWidget(scroll)
+        lay.addWidget(table_wrap)
 
-    def _add_card(self, exam):
-        card = QFrame()
-        card.setObjectName("innerCard")
-        cl = QVBoxLayout(card)
-        cl.setContentsMargins(20, 16, 20, 16)
-        cl.setSpacing(6)
-
+    def _add_row(self, exam):
+        row = QWidget()
+        row.setMinimumHeight(60)
+        rl = QHBoxLayout(row)
+        rl.setContentsMargins(0, 8, 0, 8)
+        
         date_str = str(exam[4]).split(".")[0]
-        examiner = exam[5] if exam[5] else "Unknown"
         filename = os.path.basename(exam[1])
+        pred = exam[2]
+        conf = exam[3] * 100
+        examiner = exam[5] if exam[5] else "System"
 
-        top = QLabel(f"{date_str}   |   {filename}")
-        top.setFont(QFont("Segoe UI", 13, QFont.Weight.Bold))
-        cl.addWidget(top)
-
-        row = QHBoxLayout()
-        color = "#ef4444" if exam[2] == "Tumor" else "#10b981"
-        res = QLabel(f"Result: {exam[2]} ({exam[3]*100:.1f}%)")
-        res.setStyleSheet(f"color: {color}; font-weight: 700; font-size: 13px;")
-        row.addWidget(res)
+        # Widths must match header widths
+        d_lbl = QLabel(date_str)
+        d_lbl.setStyleSheet("color: #cbd5e1; font-size: 13px;")
+        d_lbl.setFixedWidth(140)
+        rl.addWidget(d_lbl)
         
-        row.addStretch()
+        f_lbl = QLabel(filename[:18] + "..." if len(filename)>20 else filename)
+        f_lbl.setStyleSheet("color: white; font-size: 13px; font-weight: bold;")
+        f_lbl.setFixedWidth(160)
+        rl.addWidget(f_lbl)
         
-        ex_lbl = QLabel(f"Examiner: {examiner}")
-        ex_lbl.setObjectName("subtext")
-        row.addWidget(ex_lbl)
+        # Diagnostic Pill
+        pill = QLabel()
+        pill.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        if pred == "Tumor":
+            pill.setText("High Risk")
+            pill.setStyleSheet("background-color: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 12px; padding: 4px 12px; font-size: 11px; font-weight: bold;")
+        else:
+            pill.setText("Normal")
+            pill.setStyleSheet("background-color: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 12px; padding: 4px 12px; font-size: 11px; font-weight: bold;")
+        pill.setFixedSize(100, 24)
         
-        # Spacer & Individual PDF Print button
-        row.addSpacing(14)
-        btn = QPushButton("Print Report")
-        btn.setObjectName("accentBtn")
+        p_wrap = QWidget()
+        p_wrap.setFixedWidth(140)
+        p_lay = QHBoxLayout(p_wrap)
+        p_lay.setContentsMargins(0,0,0,0)
+        p_lay.addWidget(pill, alignment=Qt.AlignmentFlag.AlignLeft)
+        rl.addWidget(p_wrap)
+        
+        c_lbl = QLabel(f"{conf:.1f}%")
+        c_lbl.setStyleSheet("color: #cbd5e1; font-size: 13px;")
+        c_lbl.setFixedWidth(100)
+        rl.addWidget(c_lbl)
+        
+        e_lbl = QLabel(examiner)
+        e_lbl.setStyleSheet("color: #cbd5e1; font-size: 13px;")
+        e_lbl.setFixedWidth(140)
+        rl.addWidget(e_lbl)
+        
+        btn = QPushButton("Print")
+        btn.setStyleSheet("""
+            QPushButton {
+                background-color: transparent;
+                border: 1px solid #4f46e5;
+                color: #818cf8;
+                border-radius: 6px;
+                font-weight: bold;
+                font-size: 11px;
+            }
+            QPushButton:hover { background-color: rgba(79, 70, 229, 0.1); }
+        """)
+        btn.setFixedSize(70, 28)
         btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        btn.setFixedHeight(34)
         btn.clicked.connect(lambda _, e=exam: self._gen_single_report(e))
-        row.addWidget(btn)
+        rl.addWidget(btn)
         
-        cl.addLayout(row)
-        self.cl.addWidget(card)
+        self.cl.addWidget(row)
 
     def _gen_single_report(self, exam):
         # exam: (exam_id, image_name, prediction, confidence_score, exam_date, examiner_name, heatmap_path)

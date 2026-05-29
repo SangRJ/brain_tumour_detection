@@ -2,7 +2,7 @@
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton,
     QComboBox, QFrame, QMessageBox, QScrollArea, QGridLayout, QSizePolicy,
-    QDoubleSpinBox, QTableWidget, QTableWidgetItem, QHeaderView
+    QDoubleSpinBox, QTableWidget, QTableWidgetItem, QHeaderView, QDialog
 )
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QFont
@@ -83,45 +83,6 @@ class KPICard(QFrame):
         lay.addStretch()
 
 
-class PatientRow(QFrame):
-    clicked = pyqtSignal(int, str)  # patient_id, display_name
-
-    def __init__(self, patient_id, name, age, gender, parent=None):
-        super().__init__(parent)
-        self.patient_id = patient_id
-        self.name = name
-        self.display_name = f"[{patient_id}] {name}"
-        self.setObjectName("listItemRow")
-        self.setCursor(Qt.CursorShape.PointingHandCursor)
-        
-        lay = QHBoxLayout(self)
-        lay.setContentsMargins(14, 12, 14, 12)
-        lay.setSpacing(10)
-        
-        icon = QLabel("")
-        icon.setFont(QFont("Segoe UI", 12))
-        lay.addWidget(icon)
-        
-        name_lbl = QLabel(name)
-        name_lbl.setFont(QFont("Segoe UI", 10, QFont.Weight.Bold))
-        lay.addWidget(name_lbl)
-        
-        lay.addStretch()
-        
-        if gender:
-            g_lbl = QLabel(gender)
-            g_lbl.setObjectName("badge")
-            lay.addWidget(g_lbl)
-            
-        if age:
-            a_lbl = QLabel(f"{age} yrs")
-            a_lbl.setObjectName("badgeAccent")
-            lay.addWidget(a_lbl)
-
-    def mousePressEvent(self, event):
-        self.clicked.emit(self.patient_id, self.display_name)
-
-
 class ExaminerRow(QFrame):
     def __init__(self, name, role, dept, username, parent=None):
         super().__init__(parent)
@@ -160,136 +121,20 @@ class ExaminerRow(QFrame):
             lay.addWidget(d_lbl)
 
 
-class PatientSelectionPage(QWidget):
-    def __init__(self, main_win):
-        super().__init__()
-        self.mw = main_win
-        self.selected_pid = None
-        self.rows_list = []
-
+class NewPatientDialog(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Register New Patient")
+        self.setFixedSize(450, 360)
+        self.setStyleSheet("background-color: #0f172a; color: white;")
+        
         lay = QVBoxLayout(self)
-        lay.setContentsMargins(30, 24, 30, 24)
-        lay.setSpacing(20)
-
-        # TOP ROW: WELCOME & SYSTEM STATS OVERVIEW
-        hdr = QHBoxLayout()
-        wl = QVBoxLayout()
-        wl.setSpacing(3)
+        lay.setContentsMargins(24, 24, 24, 24)
         
-        info = database.get_examiner_info(self.mw.examiner_id)
-        ex_name = info[1] if info else "Examiner"
-        
-        welcome = QLabel(f"Welcome back, Dr. {ex_name}")
-        welcome.setObjectName("heading")
-        wl.addWidget(welcome)
-        
-        today_str = datetime.date.today().strftime("%B %d, %Y")
-        sub = QLabel(f"Clinical Dashboard Overview  {today_str}")
-        sub.setObjectName("subtext")
-        wl.addWidget(sub)
-        hdr.addLayout(wl)
-        hdr.addStretch()
-        
-        status_card = QFrame()
-        status_card.setStyleSheet("background-color: #064e3b; border-radius: 8px; padding: 6px 14px;")
-        s_lay = QHBoxLayout(status_card)
-        s_lay.setContentsMargins(6, 6, 6, 6)
-        s_lbl = QLabel("SYSTEM ONLINE")
-        s_lbl.setStyleSheet("color: #a7f3d0; font-size: 11px; font-weight: bold;")
-        s_lay.addWidget(s_lbl)
-        hdr.addWidget(status_card)
-        lay.addLayout(hdr)
-
-        # KPI Counter row
-        kpi_lay = QHBoxLayout()
-        kpi_lay.setSpacing(16)
-        
-        p_count, e_count, ex_count = get_stats()
-        
-        self.kpi_patients = KPICard("", "Patients Registered", str(p_count))
-        self.kpi_exams = KPICard("", "Diagnoses Completed", str(e_count))
-        self.kpi_staff = KPICard("", "Authorized Operators", str(ex_count))
-        
-        kpi_lay.addWidget(self.kpi_patients)
-        kpi_lay.addWidget(self.kpi_exams)
-        kpi_lay.addWidget(self.kpi_staff)
-        lay.addLayout(kpi_lay)
-
-        # MAIN LAYOUT: SPLIT CARDS
-        cols = QHBoxLayout()
-        cols.setSpacing(20)
-
-        # Left Column Patient Directory
-        left = _card()
-        ll = QVBoxLayout(left)
-        ll.setContentsMargins(24, 20, 24, 20)
-        ll.setSpacing(14)
-
-        t = QLabel("Patient Directory")
-        t.setObjectName("subheading")
-        ll.addWidget(t)
-        ll.addWidget(_sep())
-
-        # Search Bar
-        self.search = QLineEdit()
-        self.search.setPlaceholderText("Search patient directory by name...")
-        self.search.setMinimumHeight(42)
-        self.search.textChanged.connect(self._filter_patients)
-        ll.addWidget(self.search)
-
-        # Scroll Area for Patients List
-        self.scroll = QScrollArea()
-        self.scroll.setWidgetResizable(True)
-        
-        self.list_container = QWidget()
-        self.list_lay = QVBoxLayout(self.list_container)
-        self.list_lay.setContentsMargins(0, 0, 0, 0)
-        self.list_lay.setSpacing(8)
-        
-        self.scroll.setWidget(self.list_container)
-        ll.addWidget(self.scroll, 1)
-
-        # Selected Indicator Status
-        self.sel_status = QLabel("Please select a patient from the roster above")
-        self.sel_status.setObjectName("subtext")
-        self.sel_status.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.sel_status.setStyleSheet("color: #64748b; font-style: italic; font-weight: 500;")
-        ll.addWidget(self.sel_status)
-
-        # Directory Action Button bar
-        btn_bar = QHBoxLayout()
-        btn_bar.setSpacing(10)
-        
-        self.eb = QPushButton("New Examination")
-        self.eb.setObjectName("successBtn")
-        self.eb.setMinimumHeight(44)
-        self.eb.setEnabled(False)
-        self.eb.clicked.connect(self._new_exam)
-        btn_bar.addWidget(self.eb, 1)
-
-        self.vb = QPushButton("View Past Results")
-        self.vb.setMinimumHeight(44)
-        self.vb.setEnabled(False)
-        self.vb.clicked.connect(self._view_results)
-        btn_bar.addWidget(self.vb, 1)
-        
-        ll.addLayout(btn_bar)
-        
-        self._refresh_patient_list()
-        cols.addWidget(left, 6)
-
-        # Right Column Register Patient
-        right = _card()
-        rl = QVBoxLayout(right)
-        rl.setContentsMargins(24, 20, 24, 20)
-        rl.setSpacing(14)
-
-        t2 = QLabel("Register New Patient")
+        t2 = QLabel("Register New Patient Intake")
         t2.setObjectName("subheading")
-        rl.addWidget(t2)
-        rl.addWidget(_sep())
-
-        # Form Layout
+        lay.addWidget(t2)
+        
         form_grid = QGridLayout()
         form_grid.setVerticalSpacing(12)
         form_grid.setHorizontalSpacing(10)
@@ -318,130 +163,352 @@ class PatientSelectionPage(QWidget):
         self.pcontact.setPlaceholderText("Email or phone number")
         self.pcontact.setMinimumHeight(42)
         form_grid.addWidget(self.pcontact, 5, 0, 1, 2)
-
-        rl.addLayout(form_grid)
-        rl.addSpacing(4)
-
-        ab = QPushButton("Add and Initiate Scan")
+        
+        lay.addLayout(form_grid)
+        lay.addStretch()
+        
+        ab = QPushButton("Save & Register Patient")
         ab.setObjectName("accentBtn")
         ab.setMinimumHeight(44)
-        ab.clicked.connect(self._add)
-        rl.addWidget(ab)
-        
-        # Info Block to fill space cleanly
-        rl.addStretch()
-        info_block = QFrame()
-        info_block.setStyleSheet("background-color: #0f172a; border-radius: 8px; border: 1px solid #334155;")
-        ibl = QVBoxLayout(info_block)
-        ibl.setContentsMargins(14, 12, 14, 12)
-        ibl.setSpacing(4)
-        
-        it = QLabel("Secure Patient Intake Policy")
-        it.setStyleSheet("color: #f8fafc; font-size: 11px; font-weight: bold;")
-        ibl.addWidget(it)
-        
-        idsc = QLabel("Patient credentials, medical scan records, and Grad-CAM diagnostics are encrypted and stored locally under strict privacy protocols.")
-        idsc.setObjectName("muted")
-        idsc.setWordWrap(True)
-        idsc.setStyleSheet("font-size: 10px; line-height: 14px;")
-        ibl.addWidget(idsc)
-        rl.addWidget(info_block)
+        ab.clicked.connect(self.accept)
+        lay.addWidget(ab)
 
-        cols.addWidget(right, 4)
-        lay.addLayout(cols, 1)
 
-    def _refresh_patient_list(self):
-        # Clear layout
+class PatientSelectionPage(QWidget):
+    def __init__(self, main_win):
+        super().__init__()
+        self.mw = main_win
+
+        lay = QVBoxLayout(self)
+        lay.setContentsMargins(30, 24, 30, 24)
+        lay.setSpacing(20)
+
+        # Header Row
+        hdr = QHBoxLayout()
+        wl = QVBoxLayout()
+        wl.setSpacing(3)
+        title = QLabel("Active Roster")
+        title.setStyleSheet("font-size: 28px; font-weight: 700; color: white;")
+        wl.addWidget(title)
+        
+        sub = QLabel("Pending and active neurological scans requiring analysis.")
+        sub.setObjectName("subtext")
+        wl.addWidget(sub)
+        hdr.addLayout(wl)
+        hdr.addStretch()
+        
+        search_box = QLineEdit()
+        search_box.setPlaceholderText("Search Patient ID...")
+        search_box.setFixedWidth(200)
+        search_box.setMinimumHeight(38)
+        search_box.textChanged.connect(self._filter_patients)
+        self.search_box = search_box
+        hdr.addWidget(search_box)
+        
+        new_btn = QPushButton("+ NEW PATIENT")
+        new_btn.setObjectName("accentBtn")
+        new_btn.setFixedSize(140, 38)
+        new_btn.setStyleSheet("background-color: #c0c1ff; color: #0f172a; font-weight: bold; font-size: 11px;")
+        new_btn.clicked.connect(self._show_new_patient_dialog)
+        hdr.addWidget(new_btn)
+        
+        lay.addLayout(hdr)
+
+        # KPI Cards Row
+        self.kpi_lay = QHBoxLayout()
+        self.kpi_lay.setSpacing(16)
+        lay.addLayout(self.kpi_lay)
+        lay.addSpacing(10)
+
+        # Table Wrapper
+        table_wrap = QWidget()
+        table_wrap.setObjectName("card")
+        tl = QVBoxLayout(table_wrap)
+        tl.setContentsMargins(20, 20, 20, 20)
+        tl.setSpacing(0)
+        
+        # Table Header
+        th = QHBoxLayout()
+        cols = ["PATIENT ID", "NAME", "SCAN DATE", "DIAGNOSTIC STATUS", "TRIAGE PRIORITY", "ACTION"]
+        widths = [100, 160, 140, 160, 120, 200]
+        for c, w in zip(cols, widths):
+            lbl = QLabel(c)
+            lbl.setStyleSheet("color: #94a3b8; font-size: 11px; font-weight: bold; text-transform: uppercase;")
+            if w > 0:
+                lbl.setFixedWidth(w)
+            th.addWidget(lbl)
+        tl.addLayout(th)
+        
+        div = QFrame()
+        div.setFixedHeight(1)
+        div.setStyleSheet("background-color: #334155; margin-top: 10px; margin-bottom: 10px;")
+        tl.addWidget(div)
+
+        # Scroll area for rows
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setStyleSheet("border: none; background: transparent;")
+        
+        self.container = QWidget()
+        self.list_lay = QVBoxLayout(self.container)
+        self.list_lay.setContentsMargins(0, 0, 0, 0)
+        self.list_lay.setSpacing(0)
+        
+        scroll.setWidget(self.container)
+        tl.addWidget(scroll)
+        
+        # Footer
+        self.footer_lbl = QLabel()
+        self.footer_lbl.setStyleSheet("color: #94a3b8; font-size: 11px;")
+        tl.addSpacing(10)
+        tl.addWidget(self.footer_lbl)
+        
+        lay.addWidget(table_wrap)
+
+        self._refresh_data()
+
+    def showEvent(self, event):
+        super().showEvent(event)
+        self._refresh_data()
+
+    def _refresh_data(self):
+        # Clear existing KPIs
+        while self.kpi_lay.count():
+            item = self.kpi_lay.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
+                
+        # Clear existing list rows
         while self.list_lay.count():
             item = self.list_lay.takeAt(0)
             if item.widget():
                 item.widget().deleteLater()
-        self.rows_list.clear()
-        self.selected_pid = None
-        self.eb.setEnabled(False)
-        self.vb.setEnabled(False)
-        self.sel_status.setText("Please select a patient from the roster above")
-        self.sel_status.setStyleSheet("color: #64748b; font-style: italic; font-weight: 500;")
-
-        self.patients = database.get_all_patients()
-        for p in self.patients:
-            # p: (patient_id, name, age, gender, contact_info)
-            row = PatientRow(p[0], p[1], p[2], p[3], self)
-            row.clicked.connect(self._on_patient_selected)
-            self.list_lay.addWidget(row)
-            self.rows_list.append(row)
         
+        self.rows_list = []
+        
+        self.patients = database.get_all_patients()
+        total_active = len(self.patients)
+        
+        high_priority = 0
+        completed_scans = 0
+        ai_processing = 0
+        
+        self.patient_latest_exams = {}
+        for p in self.patients:
+            pid = p[0]
+            hist = database.get_patient_history(pid)
+            if hist:
+                latest = hist[0]
+                self.patient_latest_exams[pid] = latest
+                if latest[2] == "Tumor":
+                    high_priority += 1
+                elif latest[2] == "No Tumor" or latest[2] == "Normal":
+                    completed_scans += 1
+            else:
+                ai_processing += 1
+                self.patient_latest_exams[pid] = None
+
+        def _kpi(title, val, icon_color, subtitle=""):
+            c = QFrame()
+            c.setObjectName("card")
+            l = QVBoxLayout(c)
+            l.setContentsMargins(16, 12, 16, 12)
+            t = QLabel(title)
+            t.setStyleSheet(f"color: {icon_color}; font-size: 11px; font-weight: bold; text-transform: uppercase;")
+            
+            vl = QHBoxLayout()
+            v = QLabel(str(val))
+            v.setStyleSheet("color: white; font-size: 24px; font-weight: bold;")
+            vl.addWidget(v)
+            if subtitle:
+                sl = QLabel(subtitle)
+                sl.setStyleSheet("color: #4edea3; font-size: 10px; font-weight: bold;")
+                vl.addWidget(sl)
+            vl.addStretch()
+            
+            l.addWidget(t)
+            l.addLayout(vl)
+            return c
+            
+        self.kpi_lay.addWidget(_kpi("TOTAL ACTIVE", total_active, "#94a3b8", "+12 today"))
+        self.kpi_lay.addWidget(_kpi("HIGH PRIORITY", high_priority, "#ef4444"))
+        self.kpi_lay.addWidget(_kpi("COMPLETED SCANS", completed_scans, "#10b981"))
+        self.kpi_lay.addWidget(_kpi("PENDING SCANS", ai_processing, "#f59e0b"))
+
+        if not self.patients:
+            e = QLabel("No patients currently in the roster.")
+            e.setObjectName("subtext")
+            e.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            self.list_lay.addWidget(e)
+        else:
+            for i, p in enumerate(self.patients):
+                row = self._create_patient_row(p)
+                self.list_lay.addWidget(row)
+                self.rows_list.append((p[1].lower(), row))
+                if i < len(self.patients) - 1:
+                    row_div = QFrame()
+                    row_div.setFixedHeight(1)
+                    row_div.setStyleSheet("background-color: #1e293b;")
+                    self.list_lay.addWidget(row_div)
+
         self.list_lay.addStretch()
+        self.footer_lbl.setText(f"Showing 1-{min(5, total_active)} of {total_active} patients")
+
+    def _create_patient_row(self, p):
+        row = QWidget()
+        row.setMinimumHeight(60)
+        rl = QHBoxLayout(row)
+        rl.setContentsMargins(0, 8, 0, 8)
+        
+        pid = p[0]
+        name = p[1]
+        
+        latest_exam = self.patient_latest_exams.get(pid)
+        if latest_exam:
+            date_str = str(latest_exam[4]).split(".")[0]
+            pred = latest_exam[2]
+            status_text = "High Risk" if pred == "Tumor" else "Completed"
+            priority = "P1" if pred == "Tumor" else "P3"
+        else:
+            date_str = "No scans available"
+            status_text = "Review Required"
+            priority = "P2"
+
+        # Widths must match header widths
+        # PATIENT ID
+        id_lbl = QLabel(f"ND-{pid:04d}")
+        id_lbl.setStyleSheet("color: #cbd5e1; font-size: 12px; font-weight: bold;")
+        id_lbl.setFixedWidth(100)
+        rl.addWidget(id_lbl)
+        
+        # NAME
+        n_lbl = QLabel(name)
+        n_lbl.setStyleSheet("color: white; font-size: 13px; font-weight: bold;")
+        n_lbl.setFixedWidth(160)
+        rl.addWidget(n_lbl)
+        
+        # SCAN DATE
+        d_lbl = QLabel(date_str)
+        d_lbl.setStyleSheet("color: #cbd5e1; font-size: 12px;")
+        d_lbl.setFixedWidth(140)
+        rl.addWidget(d_lbl)
+        
+        # DIAGNOSTIC STATUS
+        pill = QLabel()
+        pill.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        if status_text == "High Risk":
+            pill.setText("High Risk")
+            pill.setStyleSheet("background-color: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 12px; padding: 4px 12px; font-size: 11px; font-weight: bold;")
+        elif status_text == "Completed":
+            pill.setText("Completed")
+            pill.setStyleSheet("background-color: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 12px; padding: 4px 12px; font-size: 11px; font-weight: bold;")
+        else:
+            pill.setText("Review Required")
+            pill.setStyleSheet("background-color: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 12px; padding: 4px 12px; font-size: 11px; font-weight: bold;")
+        pill.setFixedSize(120, 24)
+        
+        p_wrap = QWidget()
+        p_wrap.setFixedWidth(160)
+        p_lay = QHBoxLayout(p_wrap)
+        p_lay.setContentsMargins(0,0,0,0)
+        p_lay.addWidget(pill, alignment=Qt.AlignmentFlag.AlignLeft)
+        rl.addWidget(p_wrap)
+        
+        # TRIAGE PRIORITY
+        pri_lbl = QLabel(priority)
+        if priority == "P1":
+            pri_lbl.setStyleSheet("color: #fca5a5; font-size: 12px; font-weight: bold;")
+        elif priority == "P2":
+            pri_lbl.setStyleSheet("color: #fcd34d; font-size: 12px; font-weight: bold;")
+        else:
+            pri_lbl.setStyleSheet("color: #6ee7b7; font-size: 12px; font-weight: bold;")
+        pri_lbl.setFixedWidth(120)
+        rl.addWidget(pri_lbl)
+        
+        # ACTION BUTTONS
+        btn_lay = QHBoxLayout()
+        btn_lay.setContentsMargins(0,0,0,0)
+        btn_lay.setSpacing(8)
+        
+        btn_scan = QPushButton("Analyze")
+        btn_scan.setStyleSheet("""
+            QPushButton {
+                background-color: transparent; border: 1px solid #4f46e5; color: #818cf8; border-radius: 6px; font-weight: bold; font-size: 11px;
+            }
+            QPushButton:hover { background-color: rgba(79, 70, 229, 0.1); }
+        """)
+        btn_scan.setFixedSize(85, 32)
+        btn_scan.setCursor(Qt.CursorShape.PointingHandCursor)
+        btn_scan.clicked.connect(lambda _, x=pid: self._go_analyze(x))
+        btn_lay.addWidget(btn_scan)
+        
+        btn_hist = QPushButton("History")
+        btn_hist.setStyleSheet("""
+            QPushButton {
+                background-color: transparent; border: 1px solid #475569; color: #cbd5e1; border-radius: 6px; font-weight: bold; font-size: 11px;
+            }
+            QPushButton:hover { background-color: rgba(71, 85, 105, 0.3); }
+        """)
+        btn_hist.setFixedSize(85, 32)
+        btn_hist.setCursor(Qt.CursorShape.PointingHandCursor)
+        btn_hist.clicked.connect(lambda _, x=pid: self._go_history(x))
+        btn_lay.addWidget(btn_hist)
+        
+        btn_wrap = QWidget()
+        btn_wrap.setFixedWidth(200)
+        btn_wrap.setLayout(btn_lay)
+        rl.addWidget(btn_wrap)
+        
+        return row
 
     def _filter_patients(self, text):
         query = text.lower().strip()
-        for row in self.rows_list:
-            if not query or query in row.name.lower():
-                row.show()
+        for name_lower, row_widget in self.rows_list:
+            if not query or query in name_lower:
+                row_widget.show()
             else:
-                row.hide()
+                row_widget.hide()
 
-    def _on_patient_selected(self, pid, display_name):
-        self.selected_pid = pid
-        self.sel_status.setText(f"Active Selection: {display_name}")
-        self.sel_status.setStyleSheet("color: #6366f1; font-weight: bold; font-style: normal;")
-        
-        self.eb.setEnabled(True)
-        self.vb.setEnabled(True)
-
-        for row in self.rows_list:
-            if row.patient_id == pid:
-                row.setObjectName("listItemRowSelected")
-            else:
-                row.setObjectName("listItemRow")
-            row.style().unpolish(row)
-            row.style().polish(row)
-
-    def _new_exam(self):
-        if not self.selected_pid:
-            return
-        from ui.ui_analysis import AnalysisPage
-        self.mw.push_page(AnalysisPage(self.mw, self.selected_pid))
-
-    def _view_results(self):
-        if not self.selected_pid:
-            return
-        from ui.ui_history import PatientHistoryPage
-        self.mw.push_page(PatientHistoryPage(self.mw, self.selected_pid))
-
-    def _add(self):
-        n = self.pname.text().strip()
-        if not n:
-            QMessageBox.warning(self, "Warning", "Patient Name is required.")
-            return
-        age = None
-        try:
-            age = int(self.page.text().strip())
-        except:
-            pass
-        pid = database.add_patient(n, age, self.pgender.text().strip(), self.pcontact.text().strip())
-        
-        # Log patient intake
-        try:
-            from core import audit_logger
-            audit_logger.log_action(
-                examiner_id=self.mw.examiner_id,
-                action="Patient Intake Registered",
-                details=f"New patient profile registered: ID {pid}, Name: '{n}', Age: {age or 'N/A'}, Gender: {self.pgender.text().strip() or 'N/A'}"
-            )
-        except Exception as le:
-            print(f"[Audit Log Error] Failed logging event: {le}")
-
-        QMessageBox.information(self, "Success", "Patient successfully added to local database.")
-        
-        # Reset and open scan immediately
-        self.pname.clear()
-        self.page.clear()
-        self.pgender.clear()
-        self.pcontact.clear()
-        
+    def _go_analyze(self, pid):
         from ui.ui_analysis import AnalysisPage
         self.mw.push_page(AnalysisPage(self.mw, pid))
+
+    def _go_history(self, pid):
+        from ui.ui_history import PatientHistoryPage
+        self.mw.push_page(PatientHistoryPage(self.mw, pid))
+
+    def _show_new_patient_dialog(self):
+        from PyQt6.QtWidgets import QDialog
+        dialog = NewPatientDialog(self)
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            n = dialog.pname.text().strip()
+            if not n:
+                QMessageBox.warning(self, "Warning", "Patient Name is required.")
+                return
+            
+            age = None
+            try:
+                age = int(dialog.page.text().strip())
+            except:
+                pass
+                
+            pid = database.add_patient(n, age, dialog.pgender.text().strip(), dialog.pcontact.text().strip())
+            
+            # Log patient intake
+            try:
+                from core import audit_logger
+                audit_logger.log_action(
+                    examiner_id=self.mw.examiner_id,
+                    action="Patient Intake Registered",
+                    details=f"New patient profile registered: ID {pid}, Name: '{n}', Age: {age or 'N/A'}"
+                )
+            except Exception as le:
+                pass
+
+            QMessageBox.information(self, "Success", "Patient successfully added to local database.")
+            
+            # Navigate immediately to Analyze screen for new patient
+            self._go_analyze(pid)
 
 
 class SettingsPage(QWidget):
