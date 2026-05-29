@@ -153,9 +153,10 @@ class NewPatientDialog(QDialog):
         self.page.setMinimumHeight(42)
         form_grid.addWidget(self.page, 3, 0)
 
-        self.pgender = QLineEdit()
-        self.pgender.setPlaceholderText("Gender")
+        self.pgender = QComboBox()
+        self.pgender.addItems(["Male", "Female", "Other"])
         self.pgender.setMinimumHeight(42)
+        self.pgender.setStyleSheet("QComboBox { border: 1px solid #334155; border-radius: 6px; padding-left: 10px; background-color: #1e293b; color: white; }")
         form_grid.addWidget(self.pgender, 3, 1)
 
         form_grid.addWidget(QLabel("Contact Info"), 4, 0, 1, 2)
@@ -167,7 +168,7 @@ class NewPatientDialog(QDialog):
         lay.addLayout(form_grid)
         lay.addStretch()
         
-        ab = QPushButton("Save & Register Patient")
+        ab = QPushButton("Save and Register")
         ab.setObjectName("accentBtn")
         ab.setMinimumHeight(44)
         ab.clicked.connect(self.accept)
@@ -492,7 +493,7 @@ class PatientSelectionPage(QWidget):
             except:
                 pass
                 
-            pid = database.add_patient(n, age, dialog.pgender.text().strip(), dialog.pcontact.text().strip())
+            pid = database.add_patient(n, age, dialog.pgender.currentText().strip(), dialog.pcontact.text().strip())
             
             # Log patient intake
             try:

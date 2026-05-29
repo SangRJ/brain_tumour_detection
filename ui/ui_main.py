@@ -85,7 +85,7 @@ class MainWindow(QMainWindow):
 
         self._add_nav("Patient Selection", 0)
         self._add_nav("Hospital Analytics", 1)
-        self._add_nav("Settings & Security", 2)
+        self._add_nav("Settings", 2)
         if is_admin:
             self._add_nav("System Administration", 3)
 
@@ -96,7 +96,7 @@ class MainWindow(QMainWindow):
         logout_w = QWidget()
         lo_l = QVBoxLayout(logout_w)
         lo_l.setContentsMargins(12, 0, 12, 20)
-        logout_btn = QPushButton("Logout / Lock Session")
+        logout_btn = QPushButton("Logout")
         logout_btn.setObjectName("logoutBtn")
         logout_btn.setMinimumHeight(44)
         logout_btn.clicked.connect(self._logout)
