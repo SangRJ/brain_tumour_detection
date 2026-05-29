@@ -23,7 +23,11 @@ class _ModelLoader(QThread):
 
     def run(self):
         try:
-            p = BrainTumorPredictor()
+            import config_registry
+            cfg = config_registry.load_config()
+            thresh = cfg.get("confidence_threshold", 0.50)
+            
+            p = BrainTumorPredictor(threshold=thresh)
             p.load_model()
             g = GradCAM(p.get_model(), layer_name="top_conv")
             self.done.emit(p, g)

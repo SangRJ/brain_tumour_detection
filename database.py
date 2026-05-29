@@ -218,3 +218,54 @@ def save_examination(patient_id, examiner_id, image_name, prediction, confidence
     conn.commit()
     conn.close()
     return exam_id
+
+
+def get_dashboard_stats():
+    """Retrieve statistical counters for the hospital dashboard."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    
+    # 1. Total patients
+    cursor.execute('SELECT COUNT(*) FROM Patient')
+    total_patients = cursor.fetchone()[0]
+    
+    # 2. Total examinations
+    cursor.execute('SELECT COUNT(*) FROM MRI_Examination')
+    total_exams = cursor.fetchone()[0]
+    
+    # 3. Tumor vs Normal counts
+    cursor.execute("SELECT COUNT(*) FROM MRI_Examination WHERE prediction = 'Tumor'")
+    tumor_count = cursor.fetchone()[0]
+    
+    # Check both standard No Tumor predictions and fallback formats
+    cursor.execute("SELECT COUNT(*) FROM MRI_Examination WHERE prediction != 'Tumor'")
+    normal_count = cursor.fetchone()[0]
+    
+    # 4. Critical cases (above critical confidence threshold)
+    import config_registry
+    cfg = config_registry.load_config()
+    crit_thresh = cfg.get("critical_alert_threshold", 0.85)
+    
+    cursor.execute("SELECT COUNT(*) FROM MRI_Examination WHERE prediction = 'Tumor' AND confidence_score >= ?", (crit_thresh,))
+    critical_count = cursor.fetchone()[0]
+    
+    # 5. Examinations by date (for rolling timeline chart)
+    cursor.execute('''
+        SELECT DATE(examination_date) as exam_date, COUNT(*) 
+        FROM MRI_Examination 
+        GROUP BY exam_date 
+        ORDER BY exam_date ASC 
+        LIMIT 14
+    ''')
+    timeline_data = cursor.fetchall()
+    
+    conn.close()
+    
+    return {
+        "total_patients": total_patients,
+        "total_exams": total_exams,
+        "tumor_count": tumor_count,
+        "normal_count": normal_count,
+        "critical_count": critical_count,
+        "timeline": timeline_data
+    }

@@ -81,9 +81,10 @@ class MainWindow(QMainWindow):
                 is_admin = True
 
         self._add_nav("🔍  Patient Selection", 0)
-        self._add_nav("⚙️  Settings", 1)
+        self._add_nav("📊  Hospital Analytics", 1)
+        self._add_nav("⚙️  Settings", 2)
         if is_admin:
-            self._add_nav("👤  Add Examiner", 2)
+            self._add_nav("👤  Add Examiner", 3)
 
         sb_layout.addWidget(nav_w)
         sb_layout.addStretch()
@@ -111,13 +112,14 @@ class MainWindow(QMainWindow):
         main_layout.addWidget(content)
 
         # Pages - lazy import to avoid circular imports
-        from ui_pages import PatientSelectionPage, SettingsPage, AddExaminerPage
+        from ui_pages import PatientSelectionPage, SettingsPage, AddExaminerPage, HospitalAnalyticsPage
         self.pages = {
             0: PatientSelectionPage(self),
-            1: SettingsPage(self),
+            1: HospitalAnalyticsPage(self),
+            2: SettingsPage(self),
         }
         if is_admin:
-            self.pages[2] = AddExaminerPage(self)
+            self.pages[3] = AddExaminerPage(self)
 
         for idx in sorted(self.pages.keys()):
             self.stack.addWidget(self.pages[idx])
