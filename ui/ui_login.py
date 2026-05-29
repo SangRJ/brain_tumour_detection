@@ -2,78 +2,191 @@
 ui_login.py Login window for Brain Tumour Diagnostics.
 """
 from PyQt6.QtWidgets import (
-    QWidget, QVBoxLayout, QLabel, QLineEdit, QPushButton, QMessageBox, QHBoxLayout
+    QWidget, QVBoxLayout, QLabel, QLineEdit, QPushButton, QMessageBox, QHBoxLayout, QGridLayout, QFrame, QSpacerItem, QSizePolicy
 )
-from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QFont
+from PyQt6.QtCore import Qt, QPointF
+from PyQt6.QtGui import QFont, QPainter, QColor, QPainterPath, QPolygonF
 from core import database
 
 
 class LoginWindow(QWidget):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Brain Tumor Diagnostics Login")
-        self.setMinimumSize(500, 600)
-        self.resize(520, 650)
+        self.setWindowTitle("Secure Login - Neural Diagnostics")
+        self.setMinimumSize(1100, 700)
+        self.resize(1420, 870)
         self.setObjectName("appRoot")
+        
+        # Transparent background for the main window widget so paintEvent works
+        self.setStyleSheet("background-color: transparent;")
 
-        outer = QVBoxLayout(self)
-        outer.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        # Main horizontal layout
+        main_lay = QHBoxLayout(self)
+        main_lay.setContentsMargins(0, 0, 0, 0)
+        main_lay.setSpacing(0)
 
-        card = QWidget()
-        card.setObjectName("card")
-        card.setFixedSize(380, 460)
-        cl = QVBoxLayout(card)
-        cl.setContentsMargins(40, 40, 40, 40)
-        cl.setSpacing(8)
+        # ---------------------------------------------------------
+        # LEFT PANEL (Form Container)
+        # ---------------------------------------------------------
+        left_panel = QWidget()
+        left_grid = QGridLayout(left_panel)
+        left_grid.setContentsMargins(0, 0, 0, 0)
+        
+        form_container = QWidget()
+        form_container.setFixedWidth(440)
+        form_lay = QVBoxLayout(form_container)
+        form_lay.setContentsMargins(20, 20, 20, 20)
+        form_lay.setSpacing(8)
 
-        icon = QLabel("Neural Diagnostics")
-        icon.setObjectName("brand")
-        icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        cl.addWidget(icon)
+        # Title
+        title = QLabel("Neural Diagnostics")
+        title.setStyleSheet("color: white; font-family: 'Inter'; font-size: 28px; font-weight: 800;")
+        form_lay.addWidget(title)
 
-        title = QLabel("Clinical AI Suite")
-        title.setObjectName("muted")
-        title.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        cl.addWidget(title)
+        sub = QLabel("Clinical AI Suite")
+        sub.setStyleSheet("color: #94a3b8; font-family: 'Inter'; font-size: 14px; font-weight: 500;")
+        form_lay.addWidget(sub)
+        form_lay.addSpacing(32)
 
-        sub = QLabel("Sign in to continue")
-        sub.setObjectName("subtext")
-        sub.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        cl.addWidget(sub)
-        cl.addSpacing(20)
+        signin = QLabel("Sign in to continue")
+        signin.setStyleSheet("color: #cbd5e1; font-family: 'Inter'; font-size: 15px;")
+        form_lay.addWidget(signin)
+        form_lay.addSpacing(24)
 
-        ul = QLabel("Username")
-        ul.setObjectName("formLabel")
-        cl.addWidget(ul)
+        # Username
+        ul = QLabel("USERNAME")
+        ul.setStyleSheet("color: #94a3b8; font-size: 11px; font-weight: bold; text-transform: uppercase;")
+        form_lay.addWidget(ul)
         self.username = QLineEdit()
         self.username.setPlaceholderText("Enter username")
+        self.username.setStyleSheet("border: 1px solid #334155; border-radius: 6px; padding: 10px; color: white; font-size: 14px; background-color: #1e293b;")
         self.username.setMinimumHeight(44)
-        cl.addWidget(self.username)
-        cl.addSpacing(6)
+        form_lay.addWidget(self.username)
+        form_lay.addSpacing(16)
 
-        pl = QLabel("Password")
-        pl.setObjectName("formLabel")
-        cl.addWidget(pl)
+        # Password
+        pl = QLabel("PASSWORD")
+        pl.setStyleSheet("color: #94a3b8; font-size: 11px; font-weight: bold; text-transform: uppercase;")
+        form_lay.addWidget(pl)
+
         self.password = QLineEdit()
         self.password.setPlaceholderText("Enter password")
         self.password.setEchoMode(QLineEdit.EchoMode.Password)
+        self.password.setStyleSheet("border: 1px solid #334155; border-radius: 6px; padding: 10px; color: white; font-size: 14px; background-color: #1e293b;")
         self.password.setMinimumHeight(44)
-        cl.addWidget(self.password)
-        cl.addSpacing(16)
+        form_lay.addWidget(self.password)
+        form_lay.addSpacing(24)
 
-        btn = QPushButton("  Secure Login")
-        btn.setObjectName("accentBtn")
-        btn.setMinimumHeight(46)
-        btn.setFont(QFont("Segoe UI", 13, QFont.Weight.Bold))
+
+
+        # Login Button
+        btn = QPushButton("Secure Login →")
+        btn.setStyleSheet("""
+            QPushButton {
+                background-color: #6366f1; color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 15px;
+            }
+            QPushButton:hover { background-color: #4f46e5; }
+            QPushButton:pressed { background-color: #4338ca; }
+        """)
+        btn.setMinimumHeight(48)
+        btn.setCursor(Qt.CursorShape.PointingHandCursor)
         btn.clicked.connect(self._login)
-        cl.addWidget(btn)
+        form_lay.addWidget(btn)
 
         self.password.returnPressed.connect(self._login)
         self.username.returnPressed.connect(lambda: self.password.setFocus())
+        
+        # Center form inside the left panel
+        left_grid.addWidget(form_container, 0, 0, Qt.AlignmentFlag.AlignCenter)
 
-        cl.addStretch()
-        outer.addWidget(card)
+        # ---------------------------------------------------------
+        # RIGHT PANEL (Overlay Title)
+        # ---------------------------------------------------------
+        right_panel = QWidget()
+        right_grid = QGridLayout(right_panel)
+        right_grid.setContentsMargins(0, 0, 0, 0)
+        
+
+        
+        main_lay.addWidget(left_panel, 1)
+        main_lay.addWidget(right_panel, 1)
+
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        
+        # 1. Fill entire background with dark slate (left side)
+        painter.fillRect(self.rect(), QColor("#0f172a"))
+        
+        # 2. Draw the diagonal slash dark background (right side)
+        w = self.width()
+        h = self.height()
+        
+        # Custom polygon to create the diagonal split
+        # Top-left starts at 55% of screen width, bottom-left starts at 45%
+        poly = QPolygonF([
+            QPointF(w * 0.55, 0),
+            QPointF(w, 0),
+            QPointF(w, h),
+            QPointF(w * 0.45, h)
+        ])
+        
+        path = QPainterPath()
+        path.addPolygon(poly)
+        
+        painter.save()
+        painter.setClipPath(path)
+        
+        import os
+        from PyQt6.QtGui import QPixmap
+        img_path = os.path.join(os.path.dirname(__file__), "..", "assets", "login.png")
+        pixmap = QPixmap(img_path)
+        
+        if not pixmap.isNull():
+            # Target dimensions for the right half
+            target_w = w * 0.55
+            target_h = h
+            
+            # Scale and preserve aspect ratio by expanding to fill target_w x target_h
+            scaled_pixmap = pixmap.scaled(
+                int(target_w), int(target_h), 
+                Qt.AspectRatioMode.KeepAspectRatioByExpanding, 
+                Qt.TransformationMode.SmoothTransformation
+            )
+            
+            # Align the right edge of the image with the right edge of the window
+            x_offset = int(w - scaled_pixmap.width())
+            
+            # Center vertically
+            y_offset = int((h - scaled_pixmap.height()) // 2)
+            
+            painter.drawPixmap(x_offset, y_offset, scaled_pixmap)
+        else:
+            painter.fillPath(path, QColor("#ffffff"))  # White fallback
+            
+        painter.restore()
+
+    def _show_msg(self, title, text, is_error=False):
+        msg = QMessageBox(self)
+        msg.setWindowTitle(title)
+        msg.setText(text)
+        
+        # Professional clinical styling for dialogs
+        if is_error:
+            msg.setStyleSheet("""
+                QMessageBox { background-color: #0f172a; }
+                QLabel { color: #fca5a5; font-size: 14px; font-weight: bold; font-family: 'Inter'; }
+                QPushButton { background-color: #ef4444; color: white; border-radius: 6px; padding: 8px 16px; font-weight: bold; }
+                QPushButton:hover { background-color: #dc2626; }
+            """)
+        else:
+            msg.setStyleSheet("""
+                QMessageBox { background-color: #0f172a; }
+                QLabel { color: #cbd5e1; font-size: 14px; font-weight: bold; font-family: 'Inter'; }
+                QPushButton { background-color: #6366f1; color: white; border-radius: 6px; padding: 8px 16px; font-weight: bold; }
+                QPushButton:hover { background-color: #4f46e5; }
+            """)
+        msg.exec()
 
     def _login(self):
         u = self.username.text().strip()
@@ -83,10 +196,10 @@ class LoginWindow(QWidget):
         
         if database.needs_password_setup(u):
             if not p:
-                QMessageBox.information(self, "Password Setup", "This is your first login. Please enter a secure password to set it.")
+                self._show_msg("Password Setup Required", "This is your first login. Please enter a secure password to register your account.", is_error=False)
                 return
             database.setup_password(u, p)
-            QMessageBox.information(self, "Password Setup", "Your password has been successfully set. You will now be logged in.")
+            self._show_msg("Account Registered", "Your password has been successfully securely stored. You will now be logged in.", is_error=False)
             
         eid = database.authenticate(u, p)
         if eid:
@@ -94,7 +207,7 @@ class LoginWindow(QWidget):
             try:
                 audit_logger.log_action(eid, "Portal Login Success", "Examiner successfully authenticated into local clinical session.")
             except Exception as le:
-                print(f"[Audit Log Error] Failed logging event: {le}")
+                pass
 
             from ui.ui_main import MainWindow
             self.main = MainWindow(eid)
@@ -105,6 +218,6 @@ class LoginWindow(QWidget):
             try:
                 audit_logger.log_action(None, "Portal Login Failed", f"Unauthorized credentials attempted for username: '{u}'")
             except Exception as le:
-                print(f"[Audit Log Error] Failed logging event: {le}")
+                pass
 
-            QMessageBox.critical(self, "Login Failed", "Invalid username or password.")
+            self._show_msg("Authentication Failed", "The credentials provided are invalid or expired.", is_error=True)
