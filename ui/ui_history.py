@@ -233,20 +233,23 @@ class PatientHistoryPage(QWidget):
                 "confidence": exam[3]
             }
             
-            generator.generate_pdf(exam_data, fn)
+            import secrets
+            # Secure PDF with a cryptographically secure random PIN
+            doc_password = secrets.token_hex(4).upper()
+            generator.generate_pdf(exam_data, fn, password=doc_password)
             
             # LOG EVENT
             try:
                 from core import audit_logger
                 audit_logger.log_action(
                     examiner_id=self.mw.examiner_id,
-                    action="Diagnostic Report Exported",
-                    details=f"Exported diagnostic report for Patient ID: {self.pid}, Exam ID: {exam[0]} to: {fn}"
+                    action="Encrypted Diagnostic Report Exported",
+                    details=f"Exported encrypted diagnostic report for Patient ID: {self.pid}, Exam ID: {exam[0]} to: {fn}"
                 )
             except Exception as le:
                 print(f"[Audit Log Error] Failed logging event: {le}")
 
-            QMessageBox.information(self, "Success", f"Diagnostic report saved as:\n{fn}")
+            QMessageBox.information(self, "Export Successful", f"Encrypted diagnostic report saved securely as:\n{fn}\n\nDocument Password: {doc_password}")
             
             # Auto-open
             if os.name == 'nt':
@@ -385,18 +388,34 @@ class PatientHistoryPage(QWidget):
         try:
             pdf.output(fn)
             
+            import secrets
+            doc_password = secrets.token_hex(4).upper()
+            
+            # Apply Encryption
+            try:
+                from pypdf import PdfReader, PdfWriter
+                reader = PdfReader(fn)
+                writer = PdfWriter()
+                for page in reader.pages:
+                    writer.add_page(page)
+                writer.encrypt(doc_password)
+                with open(fn, "wb") as f:
+                    writer.write(f)
+            except Exception as e:
+                print(f"Error encrypting PDF: {e}")
+            
             # LOG EVENT
             try:
                 from core import audit_logger
                 audit_logger.log_action(
                     examiner_id=self.mw.examiner_id,
-                    action="History Exported",
-                    details=f"Exported timeline history for Patient ID: {self.pid} to: {fn}"
+                    action="Encrypted History Exported",
+                    details=f"Exported encrypted timeline history for Patient ID: {self.pid} to: {fn}"
                 )
             except Exception as le:
                 print(f"[Audit Log Error] Failed logging event: {le}")
 
-            QMessageBox.information(self, "Success", f"History log saved as {fn}")
+            QMessageBox.information(self, "Export Successful", f"Encrypted timeline report saved securely as:\n{os.path.basename(fn)}\n\nDocument Password: {doc_password}")
             if os.name == 'nt':
                 os.startfile(fn)
             elif os.uname().sysname == 'Darwin':

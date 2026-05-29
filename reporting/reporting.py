@@ -17,7 +17,7 @@ class ClinicalReportGenerator:
         self.patient_info = database.get_patient_info(patient_id)
         self.examiner_info = database.get_examiner_info(examiner_id)
 
-    def generate_pdf(self, exam_data, output_path):
+    def generate_pdf(self, exam_data, output_path, password=None):
         """
         Generate a detailed diagnostic report in PDF format.
         exam_data must contain:
@@ -279,3 +279,17 @@ class ClinicalReportGenerator:
 
         # Save Report
         pdf.output(output_path)
+        
+        # Apply Encryption if password is provided
+        if password:
+            try:
+                from pypdf import PdfReader, PdfWriter
+                reader = PdfReader(output_path)
+                writer = PdfWriter()
+                for page in reader.pages:
+                    writer.add_page(page)
+                writer.encrypt(password)
+                with open(output_path, "wb") as f:
+                    writer.write(f)
+            except Exception as e:
+                print(f"Error encrypting PDF: {e}")

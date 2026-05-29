@@ -2,6 +2,7 @@ import sqlite3
 import datetime
 import os
 import hashlib
+from core import security
 
 DB_FILE = "clinic.db"
 
@@ -144,16 +145,23 @@ def get_all_patients():
     cursor.execute('SELECT patient_id, patient_name, age, gender, contact_info FROM Patient')
     patients = cursor.fetchall()
     conn.close()
-    return patients
+    
+    decrypted = []
+    for p in patients:
+        decrypted.append((p[0], security.decrypt_pii(p[1]), p[2], p[3], security.decrypt_pii(p[4])))
+    return decrypted
 
 def add_patient(patient_name, age, gender, contact_info):
     """Explicitly create a new patient."""
+    enc_name = security.encrypt_pii(patient_name)
+    enc_contact = security.encrypt_pii(contact_info)
+    
     conn = get_connection()
     cursor = conn.cursor()
     cursor.execute('''
         INSERT INTO Patient (patient_name, age, gender, contact_info)
         VALUES (?, ?, ?, ?)
-    ''', (patient_name, age, gender, contact_info))
+    ''', (enc_name, age, gender, enc_contact))
     patient_id = cursor.lastrowid
     conn.commit()
     conn.close()
@@ -180,6 +188,8 @@ def get_patient_info(patient_id):
     cursor.execute('SELECT patient_id, patient_name, age, gender, contact_info FROM Patient WHERE patient_id = ?', (patient_id,))
     info = cursor.fetchone()
     conn.close()
+    if info:
+        return (info[0], security.decrypt_pii(info[1]), info[2], info[3], security.decrypt_pii(info[4]))
     return info
 
 def update_examiner_name(examiner_id, new_name):

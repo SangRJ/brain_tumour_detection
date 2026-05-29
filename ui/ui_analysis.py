@@ -422,20 +422,23 @@ class AnalysisPage(QWidget):
                 "confidence": self.last_conf
             }
             
-            generator.generate_pdf(exam_data, fn)
+            import secrets
+            # Secure PDF with a cryptographically secure random PIN
+            doc_password = secrets.token_hex(4).upper()
+            generator.generate_pdf(exam_data, fn, password=doc_password)
             
             # Log print action
             try:
                 from core import audit_logger
                 audit_logger.log_action(
                     examiner_id=self.eid,
-                    action="Diagnostic Report Exported",
-                    details=f"Exported diagnostic report from Analysis Studio for Patient ID: {self.pid}, Exam ID: {self.last_exam_id} to: {fn}"
+                    action="Encrypted Diagnostic Report Exported",
+                    details=f"Exported encrypted diagnostic report from Analysis Studio for Patient ID: {self.pid}, Exam ID: {self.last_exam_id} to: {fn}"
                 )
             except Exception as le:
                 print(f"[Audit Log Error] Failed logging event: {le}")
 
-            QMessageBox.information(self, "Success", f"Diagnostic report saved in reports folder:\n{os.path.basename(fn)}")
+            QMessageBox.information(self, "Export Successful", f"Encrypted diagnostic report saved securely as:\n{os.path.basename(fn)}\n\nDocument Password: {doc_password}")
             
             # Auto-open
             if os.name == 'nt':

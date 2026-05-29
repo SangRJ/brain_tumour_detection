@@ -39,3 +39,6 @@ Thumbs.db
 reports/
 images/
 audit.log
+
+# Security Keys
+secret.key
