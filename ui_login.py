@@ -79,6 +79,8 @@ class LoginWindow(QWidget):
         u = self.username.text().strip()
         p = self.password.text().strip()
         
+        import audit_logger
+        
         if database.needs_password_setup(u):
             if not p:
                 QMessageBox.information(self, "Password Setup", "This is your first login. Please enter a secure password to set it.")
@@ -88,9 +90,21 @@ class LoginWindow(QWidget):
             
         eid = database.authenticate(u, p)
         if eid:
+            # Log Successful Login
+            try:
+                audit_logger.log_action(eid, "Portal Login Success", "Examiner successfully authenticated into local clinical session.")
+            except Exception as le:
+                print(f"[Audit Log Error] Failed logging event: {le}")
+
             from ui_main import MainWindow
             self.main = MainWindow(eid)
             self.main.show()
             self.close()
         else:
+            # Log Failed Login Attempt
+            try:
+                audit_logger.log_action(None, "Portal Login Failed", f"Unauthorized credentials attempted for username: '{u}'")
+            except Exception as le:
+                print(f"[Audit Log Error] Failed logging event: {le}")
+
             QMessageBox.critical(self, "Login Failed", "Invalid username or password.")

@@ -1,16 +1,19 @@
-"""
-app.py — Entry point for Brain Tumour Diagnostics (PyQt6).
-"""
 import sys
 from PyQt6.QtWidgets import QApplication
 from PyQt6.QtGui import QFont
 import database
+import audit_logger
 from theme import QSS
 from ui_login import LoginWindow
 
 
 def main():
     database.init_db()
+    audit_logger.init_audit_db()
+    
+    # Log system startup event
+    audit_logger.log_action(examiner_id=None, action="System Startup", details="MedDiagnostics Core Application Engine Booted.")
+
     app = QApplication(sys.argv)
     app.setStyleSheet(QSS)
     app.setFont(QFont("Segoe UI", 10))

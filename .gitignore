@@ -34,3 +34,8 @@ Thumbs.db
 .vscode/
 *.swp
 *.swo
+
+# Patient Data, Diagnostics and Reports
+reports/
+images/
+audit.log

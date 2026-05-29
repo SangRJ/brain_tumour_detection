@@ -128,8 +128,14 @@ class AnalysisPage(QWidget):
         self.analyze_btn.setEnabled(False)
         self.analyze_btn.clicked.connect(self._analyze)
         
+        self.print_btn = QPushButton("🖨️  Print Report")
+        self.print_btn.setMinimumHeight(44)
+        self.print_btn.setEnabled(False)
+        self.print_btn.clicked.connect(self._print_report)
+        
         ctrl_layout.addWidget(self.load_btn)
         ctrl_layout.addWidget(self.analyze_btn)
+        ctrl_layout.addWidget(self.print_btn)
         ctrl_layout.addStretch()
         tl_layout.addLayout(ctrl_layout, 1)
 
@@ -254,6 +260,7 @@ class AnalysisPage(QWidget):
             self.orig_lbl.setPixmap(pm)
 
             self.analyze_btn.setEnabled(True)
+            self.print_btn.setEnabled(False)
             self.res_title.setText("Ready")
             self.res_title.setStyleSheet("color: #6366f1;")
             self.conf_label.setText("")
@@ -298,19 +305,70 @@ class AnalysisPage(QWidget):
         self.conf_bar.setValue(int(confidence * 1000))
         self.conf_pct.setText(f"{confidence * 100:.1f}%")
 
+        # ─── SECURE FILE STORAGE & INTEGRATION ───
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        
+        # 1. Save Grad-CAM Heatmap
+        self.hm_save_path = "heatmap_error"
         if overlay_pil:
             pm = _pil_to_pixmap(overlay_pil)
             self.hm_lbl.setPixmap(pm)
             self.hm_lbl.setText("")
+            
+            try:
+                heatmaps_dir = os.path.join(base_dir, "images", "patient", "heatmaps")
+                os.makedirs(heatmaps_dir, exist_ok=True)
+                import time
+                hm_filename = f"heatmap_p{self.pid}_{int(time.time())}.png"
+                self.hm_save_path = os.path.join(heatmaps_dir, hm_filename)
+                overlay_pil.save(self.hm_save_path)
+            except Exception as e:
+                print(f"[Analysis Error] Failed to save Grad-CAM heatmap overlay: {e}")
         else:
             self.hm_lbl.setText("Grad-CAM Error")
 
-        database.save_examination(
-            patient_id=self.pid, examiner_id=self.eid,
-            image_name=os.path.basename(self.current_path),
-            prediction=label, confidence_score=confidence,
-            heatmap_path="heatmap_generated" if overlay_pil else "error"
+        # 2. Copy Original Scan to Local Storage Repository
+        self.mri_save_path = self.current_path
+        if self.current_path and os.path.exists(self.current_path):
+            try:
+                scans_dir = os.path.join(base_dir, "images", "patient", "scans")
+                os.makedirs(scans_dir, exist_ok=True)
+                import shutil
+                import time
+                scan_ext = os.path.splitext(self.current_path)[1] or ".png"
+                scan_filename = f"scan_p{self.pid}_{int(time.time())}{scan_ext}"
+                self.mri_save_path = os.path.join(scans_dir, scan_filename)
+                shutil.copy2(self.current_path, self.mri_save_path)
+            except Exception as e:
+                print(f"[Analysis Error] Failed to copy original scan to repository: {e}")
+
+        # 3. Save Examination to Database
+        self.last_pred = label
+        self.last_conf = confidence
+        self.last_exam_id = database.save_examination(
+            patient_id=self.pid,
+            examiner_id=self.eid,
+            image_name=self.mri_save_path,
+            prediction=label,
+            confidence_score=confidence,
+            heatmap_path=self.hm_save_path
         )
+
+        # Enable direct clinical printing
+        if self.last_exam_id:
+            self.print_btn.setEnabled(True)
+
+        # 4. Write to Medical Audit Trail Log
+        try:
+            import audit_logger
+            fn = os.path.basename(self.current_path)
+            audit_logger.log_action(
+                examiner_id=self.eid,
+                action="MRI Diagnosis Completed",
+                details=f"Patient ID: {self.pid}, Result: {label}, Confidence: {confidence*100:.1f}%, File: {fn}"
+            )
+        except Exception as le:
+            print(f"[Audit Log Error] Failed logging event: {le}")
 
         if confidence < 0.65:
             self._set_status("Done - low confidence", "#f59e0b")
@@ -324,3 +382,64 @@ class AnalysisPage(QWidget):
         self.res_title.setText("Failed")
         self.res_title.setStyleSheet("color: #ef4444;")
         self.analyze_btn.setEnabled(True)
+
+    def _print_report(self):
+        if not hasattr(self, "last_exam_id") or not self.last_exam_id:
+            return
+            
+        from reporting import ClinicalReportGenerator
+        import subprocess
+        import datetime
+        
+        info = database.get_patient_info(self.pid)
+        if not info:
+            QMessageBox.critical(self, "Error", "Patient info not found.")
+            return
+            
+        p_name = info[1].replace(' ', '_')
+        date_clean = datetime.date.today().strftime("%Y-%m-%d")
+        
+        # Ensure reports folder exists inside workspace
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        reports_dir = os.path.join(base_dir, "reports")
+        os.makedirs(reports_dir, exist_ok=True)
+        
+        fn = os.path.join(reports_dir, f"diagnostic_report_{p_name}_{date_clean}_exam_{self.last_exam_id}.pdf")
+        
+        try:
+            generator = ClinicalReportGenerator(self.pid, self.eid)
+            
+            exam_data = {
+                "date": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "image_name": os.path.basename(self.mri_save_path),
+                "original_path": self.mri_save_path,
+                "heatmap_path": self.hm_save_path,
+                "prediction": self.last_pred,
+                "confidence": self.last_conf
+            }
+            
+            generator.generate_pdf(exam_data, fn)
+            
+            # Log print action
+            try:
+                import audit_logger
+                audit_logger.log_action(
+                    examiner_id=self.eid,
+                    action="Diagnostic Report Exported",
+                    details=f"Exported diagnostic report from Analysis Studio for Patient ID: {self.pid}, Exam ID: {self.last_exam_id} to: {fn}"
+                )
+            except Exception as le:
+                print(f"[Audit Log Error] Failed logging event: {le}")
+
+            QMessageBox.information(self, "Success", f"Diagnostic report saved in reports folder:\n{os.path.basename(fn)}")
+            
+            # Auto-open
+            if os.name == 'nt':
+                os.startfile(fn)
+            elif os.uname().sysname == 'Darwin':
+                subprocess.call(['open', fn])
+            else:
+                subprocess.call(['xdg-open', fn])
+                
+        except Exception as ex:
+            QMessageBox.critical(self, "Error", f"Could not generate diagnostic report:\n{ex}")

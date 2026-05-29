@@ -146,7 +146,7 @@ def get_patient_history(patient_id):
     conn = get_connection()
     cursor = conn.cursor()
     cursor.execute('''
-        SELECT e.exam_id, e.image_name, e.prediction, e.confidence_score, e.examination_date, ex.examiner_name
+        SELECT e.exam_id, e.image_name, e.prediction, e.confidence_score, e.examination_date, ex.examiner_name, e.heatmap_path
         FROM MRI_Examination e
         LEFT JOIN Examiner ex ON e.examiner_id = ex.examiner_id
         WHERE e.patient_id = ?

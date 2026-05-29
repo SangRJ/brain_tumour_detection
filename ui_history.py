@@ -72,23 +72,93 @@ class PatientHistoryPage(QWidget):
 
         date_str = str(exam[4]).split(".")[0]
         examiner = exam[5] if exam[5] else "Unknown"
+        filename = os.path.basename(exam[1])
 
-        top = QLabel(f"📅 {date_str}   |   📁 {exam[1]}")
-        top.setFont(QFont("Segoe UI", 14, QFont.Weight.Bold))
+        top = QLabel(f"📅 {date_str}   |   📁 {filename}")
+        top.setFont(QFont("Segoe UI", 13, QFont.Weight.Bold))
         cl.addWidget(top)
 
         row = QHBoxLayout()
         color = "#ef4444" if exam[2] == "Tumor" else "#10b981"
         res = QLabel(f"Result: {exam[2]} ({exam[3]*100:.1f}%)")
-        res.setStyleSheet(f"color: {color}; font-weight: 700; font-size: 14px;")
+        res.setStyleSheet(f"color: {color}; font-weight: 700; font-size: 13px;")
         row.addWidget(res)
+        
         row.addStretch()
+        
         ex_lbl = QLabel(f"Examiner: {examiner}")
         ex_lbl.setObjectName("subtext")
         row.addWidget(ex_lbl)
+        
+        # Spacer & Individual PDF Print button
+        row.addSpacing(14)
+        btn = QPushButton("🖨️  Print Report")
+        btn.setObjectName("accentBtn")
+        btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        btn.setFixedHeight(34)
+        btn.clicked.connect(lambda _, e=exam: self._gen_single_report(e))
+        row.addWidget(btn)
+        
         cl.addLayout(row)
-
         self.cl.addWidget(card)
+
+    def _gen_single_report(self, exam):
+        # exam: (exam_id, image_name, prediction, confidence_score, exam_date, examiner_name, heatmap_path)
+        from reporting import ClinicalReportGenerator
+        
+        info = database.get_patient_info(self.pid)
+        if not info:
+            QMessageBox.critical(self, "Error", "Patient info not found.")
+            return
+
+        p_name = info[1].replace(' ', '_')
+        date_clean = str(exam[4]).split(" ")[0]
+        
+        # Ensure reports folder exists inside workspace
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        reports_dir = os.path.join(base_dir, "reports")
+        os.makedirs(reports_dir, exist_ok=True)
+        
+        fn = os.path.join(reports_dir, f"diagnostic_report_{p_name}_{date_clean}_exam_{exam[0]}.pdf")
+        
+        try:
+            generator = ClinicalReportGenerator(self.pid, self.mw.examiner_id)
+            
+            # Prepare exam data
+            exam_data = {
+                "date": str(exam[4]).split(".")[0],
+                "image_name": os.path.basename(exam[1]),
+                "original_path": exam[1],    # Secure copied original scan path
+                "heatmap_path": exam[6],     # Secure generated heatmap path
+                "prediction": exam[2],
+                "confidence": exam[3]
+            }
+            
+            generator.generate_pdf(exam_data, fn)
+            
+            # ─── LOG EVENT ───
+            try:
+                import audit_logger
+                audit_logger.log_action(
+                    examiner_id=self.mw.examiner_id,
+                    action="Diagnostic Report Exported",
+                    details=f"Exported diagnostic report for Patient ID: {self.pid}, Exam ID: {exam[0]} to: {fn}"
+                )
+            except Exception as le:
+                print(f"[Audit Log Error] Failed logging event: {le}")
+
+            QMessageBox.information(self, "Success", f"Diagnostic report saved as:\n{fn}")
+            
+            # Auto-open
+            if os.name == 'nt':
+                os.startfile(fn)
+            elif os.uname().sysname == 'Darwin':
+                subprocess.call(['open', fn])
+            else:
+                subprocess.call(['xdg-open', fn])
+                
+        except Exception as ex:
+            QMessageBox.critical(self, "Error", f"Could not generate diagnostic report:\n{ex}")
 
     def _gen_pdf(self):
         info = database.get_patient_info(self.pid)
@@ -99,7 +169,7 @@ class PatientHistoryPage(QWidget):
         pdf = FPDF()
         pdf.add_page()
         pdf.set_font("Helvetica", "B", 20)
-        pdf.cell(0, 10, "Brain Tumor Diagnostic Report", new_x="LMARGIN", new_y="NEXT", align="C")
+        pdf.cell(0, 10, "Brain Tumor Diagnostic History Log", new_x="LMARGIN", new_y="NEXT", align="C")
         pdf.ln(10)
 
         pdf.set_font("Helvetica", "B", 14)
@@ -118,18 +188,36 @@ class PatientHistoryPage(QWidget):
         for exam in self.history:
             date_str = str(exam[4]).split(".")[0]
             examiner = exam[5] if exam[5] else "Unknown"
+            filename = os.path.basename(exam[1])
             pdf.set_font("Helvetica", "B", 12)
             pdf.cell(0, 8, f"Date: {date_str}", new_x="LMARGIN", new_y="NEXT")
             pdf.set_font("Helvetica", "", 12)
-            pdf.cell(0, 8, f"Image File: {exam[1]}", new_x="LMARGIN", new_y="NEXT")
+            pdf.cell(0, 8, f"Image File: {filename}", new_x="LMARGIN", new_y="NEXT")
             pdf.cell(0, 8, f"Examiner: {examiner}", new_x="LMARGIN", new_y="NEXT")
             pdf.cell(0, 8, f"Diagnosis: {exam[2]} ({exam[3]*100:.1f}%)", new_x="LMARGIN", new_y="NEXT")
             pdf.ln(5)
 
-        fn = f"report_{info[1].replace(' ', '_')}.pdf"
+        # Ensure reports folder exists inside workspace
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        reports_dir = os.path.join(base_dir, "reports")
+        os.makedirs(reports_dir, exist_ok=True)
+        
+        fn = os.path.join(reports_dir, f"history_{info[1].replace(' ', '_')}.pdf")
         try:
             pdf.output(fn)
-            QMessageBox.information(self, "Success", f"Report saved as {fn}")
+            
+            # ─── LOG EVENT ───
+            try:
+                import audit_logger
+                audit_logger.log_action(
+                    examiner_id=self.mw.examiner_id,
+                    action="History Exported",
+                    details=f"Exported timeline history for Patient ID: {self.pid} to: {fn}"
+                )
+            except Exception as le:
+                print(f"[Audit Log Error] Failed logging event: {le}")
+
+            QMessageBox.information(self, "Success", f"History log saved as {fn}")
             if os.name == 'nt':
                 os.startfile(fn)
             elif os.uname().sysname == 'Darwin':

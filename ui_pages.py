@@ -419,6 +419,18 @@ class PatientSelectionPage(QWidget):
         except:
             pass
         pid = database.add_patient(n, age, self.pgender.text().strip(), self.pcontact.text().strip())
+        
+        # Log patient intake
+        try:
+            import audit_logger
+            audit_logger.log_action(
+                examiner_id=self.mw.examiner_id,
+                action="Patient Intake Registered",
+                details=f"New patient profile registered: ID {pid}, Name: '{n}', Age: {age or 'N/A'}, Gender: {self.pgender.text().strip() or 'N/A'}"
+            )
+        except Exception as le:
+            print(f"[Audit Log Error] Failed logging event: {le}")
+
         QMessageBox.information(self, "Success", "Patient successfully added to local database.")
         
         # Reset and open scan immediately
@@ -583,6 +595,17 @@ class SettingsPage(QWidget):
         n = self.name_e.text().strip()
         if n:
             database.update_examiner_name(self.mw.examiner_id, n)
+            
+            try:
+                import audit_logger
+                audit_logger.log_action(
+                    examiner_id=self.mw.examiner_id,
+                    action="Account Profile Updated",
+                    details=f"Display name updated to: '{n}'"
+                )
+            except Exception as le:
+                print(f"[Audit Log Error] Failed logging event: {le}")
+
             QMessageBox.information(self, "Success", "Display name saved successfully.")
         else:
             QMessageBox.warning(self, "Warning", "Display name cannot be empty.")
@@ -591,6 +614,17 @@ class SettingsPage(QWidget):
         p = self.pw_e.text().strip()
         if p:
             database.update_examiner_password(self.mw.examiner_id, p)
+            
+            try:
+                import audit_logger
+                audit_logger.log_action(
+                    examiner_id=self.mw.examiner_id,
+                    action="Account Password Updated",
+                    details="Security credentials updated."
+                )
+            except Exception as le:
+                print(f"[Audit Log Error] Failed logging event: {le}")
+
             QMessageBox.information(self, "Success", "Security credentials updated successfully.")
             self.pw_e.clear()
         else:
@@ -734,6 +768,16 @@ class AddExaminerPage(QWidget):
             return
         ok = database.add_examiner(u, "", n, self.role_cb.currentText(), self.dept_cb.currentText())
         if ok:
+            try:
+                import audit_logger
+                audit_logger.log_action(
+                    examiner_id=self.mw.examiner_id,
+                    action="Staff Operator Registered",
+                    details=f"Generated operator account for: '{u}' ({self.role_cb.currentText()} in {self.dept_cb.currentText()})"
+                )
+            except Exception as le:
+                print(f"[Audit Log Error] Failed logging event: {le}")
+
             QMessageBox.information(self, "Success", f"Clinical credentials for operator '{u}' successfully generated.")
             self.uname.clear(); self.fname.clear()
             self._refresh_roster()

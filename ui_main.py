@@ -72,9 +72,18 @@ class MainWindow(QMainWindow):
         self.nav_layout.setContentsMargins(12, 0, 12, 0)
         self.nav_layout.setSpacing(4)
 
+        # Admin privilege check
+        is_admin = False
+        if info:
+            username = info[0]
+            role = info[2]
+            if username == "admin" or (role and role.lower() == "admin"):
+                is_admin = True
+
         self._add_nav("🔍  Patient Selection", 0)
         self._add_nav("⚙️  Settings", 1)
-        self._add_nav("👤  Add Examiner", 2)
+        if is_admin:
+            self._add_nav("👤  Add Examiner", 2)
 
         sb_layout.addWidget(nav_w)
         sb_layout.addStretch()
@@ -106,10 +115,12 @@ class MainWindow(QMainWindow):
         self.pages = {
             0: PatientSelectionPage(self),
             1: SettingsPage(self),
-            2: AddExaminerPage(self),
         }
-        for p in self.pages.values():
-            self.stack.addWidget(p)
+        if is_admin:
+            self.pages[2] = AddExaminerPage(self)
+
+        for idx in sorted(self.pages.keys()):
+            self.stack.addWidget(self.pages[idx])
 
         self._switch(0)
 
@@ -146,6 +157,12 @@ class MainWindow(QMainWindow):
         self._switch(0)
 
     def _logout(self):
+        try:
+            import audit_logger
+            audit_logger.log_action(self.examiner_id, "Portal Session Logged Out", "Examiner safely terminated clinical session.")
+        except Exception as le:
+            print(f"[Audit Log Error] Failed logging event: {le}")
+
         from ui_login import LoginWindow
         self.login = LoginWindow()
         self.login.show()
