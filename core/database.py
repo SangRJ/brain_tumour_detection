@@ -36,9 +36,16 @@ def init_db():
             password TEXT NOT NULL,
             examiner_name TEXT,
             role TEXT,
-            department TEXT
+            department TEXT,
+            is_active INTEGER DEFAULT 1
         )
     ''')
+    
+    # Try adding the column in case the table already exists
+    try:
+        cursor.execute('ALTER TABLE Examiner ADD COLUMN is_active INTEGER DEFAULT 1')
+    except sqlite3.OperationalError:
+        pass
 
     # MRI Examination Table
     cursor.execute('''
@@ -72,15 +79,26 @@ def authenticate(username, password):
     hashed_password = _hash_password(password)
     
     cursor.execute('''
-        SELECT examiner_id FROM Examiner WHERE username = ? AND password = ?
+        SELECT examiner_id, is_active FROM Examiner WHERE username = ? AND password = ?
     ''', (username, hashed_password))
     
     result = cursor.fetchone()
     conn.close()
     
     if result:
-        return result[0]
+        eid, is_active = result
+        if is_active == 0:
+            return -1 # Account disabled
+        return eid
     return None
+
+def toggle_examiner_status(examiner_id, is_active):
+    """Enable or disable an examiner's account."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute('UPDATE Examiner SET is_active = ? WHERE examiner_id = ?', (is_active, examiner_id))
+    conn.commit()
+    conn.close()
 
 def add_examiner(username, password, examiner_name, role, department):
     """Add a new examiner to the database."""

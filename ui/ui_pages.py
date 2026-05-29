@@ -47,7 +47,7 @@ def get_all_examiners():
     try:
         conn = database.get_connection()
         cursor = conn.cursor()
-        cursor.execute("SELECT examiner_name, role, department, username FROM Examiner ORDER BY examiner_id DESC")
+        cursor.execute("SELECT examiner_id, examiner_name, role, department, username, is_active FROM Examiner ORDER BY examiner_id DESC")
         rows = cursor.fetchall()
         conn.close()
         return rows
@@ -84,7 +84,7 @@ class KPICard(QFrame):
 
 
 class ExaminerRow(QFrame):
-    def __init__(self, name, role, dept, username, parent=None):
+    def __init__(self, eid, name, role, dept, username, is_active, parent=None):
         super().__init__(parent)
         self.setObjectName("listItemRow")
         
@@ -119,6 +119,32 @@ class ExaminerRow(QFrame):
             d_lbl = QLabel(dept)
             d_lbl.setObjectName("badgeAccent")
             lay.addWidget(d_lbl)
+
+        self.eid = eid
+        self.is_active = is_active
+        self.pg_parent = parent
+        
+        btn = QPushButton("Revoke Access" if is_active else "Restore Access")
+        
+        if self.pg_parent and hasattr(self.pg_parent, 'mw') and self.pg_parent.mw.examiner_id == eid:
+            btn.setText("Current User")
+            btn.setEnabled(False)
+            btn.setStyleSheet("QPushButton { background-color: #334155; color: #94a3b8; padding: 6px 12px; border-radius: 4px; font-weight: bold; font-size: 11px; border: none; }")
+        else:
+            if is_active:
+                btn.setStyleSheet("QPushButton { background-color: #ef4444; color: white; padding: 6px 12px; border-radius: 4px; font-weight: bold; font-size: 11px; border: none; } QPushButton:hover { background-color: #dc2626; }")
+            else:
+                btn.setStyleSheet("QPushButton { background-color: #10b981; color: white; padding: 6px 12px; border-radius: 4px; font-weight: bold; font-size: 11px; border: none; } QPushButton:hover { background-color: #059669; }")
+            btn.setCursor(Qt.CursorShape.PointingHandCursor)
+            btn.clicked.connect(self._toggle)
+            
+        lay.addWidget(btn)
+
+    def _toggle(self):
+        new_status = 0 if self.is_active else 1
+        database.toggle_examiner_status(self.eid, new_status)
+        if self.pg_parent:
+            self.pg_parent._refresh_roster()
 
 
 class NewPatientDialog(QDialog):
@@ -1077,8 +1103,8 @@ class AddExaminerPage(QWidget):
 
         examiners = get_all_examiners()
         for ex in examiners:
-            # ex: (name, role, department, username)
-            row = ExaminerRow(ex[0], ex[1], ex[2], ex[3], self)
+            # ex: (eid, name, role, department, username, is_active)
+            row = ExaminerRow(ex[0], ex[1], ex[2], ex[3], ex[4], ex[5], self)
             self.roster_lay.addWidget(row)
             self.rows_list.append(row)
         

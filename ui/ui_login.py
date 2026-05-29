@@ -202,6 +202,14 @@ class LoginWindow(QWidget):
             self._show_msg("Account Registered", "Your password has been successfully securely stored. You will now be logged in.", is_error=False)
             
         eid = database.authenticate(u, p)
+        if eid == -1:
+            try:
+                audit_logger.log_action(None, "Portal Login Blocked", f"Login attempted on disabled account: '{u}'")
+            except Exception:
+                pass
+            self._show_msg("Account Suspended", "This account has been disabled by a system administrator", is_error=True)
+            return
+            
         if eid:
             # Log Successful Login
             try:
