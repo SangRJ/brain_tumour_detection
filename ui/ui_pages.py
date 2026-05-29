@@ -2,7 +2,7 @@
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton,
     QComboBox, QFrame, QMessageBox, QScrollArea, QGridLayout, QSizePolicy,
-    QDoubleSpinBox
+    QDoubleSpinBox, QTableWidget, QTableWidgetItem, QHeaderView
 )
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QFont
@@ -449,7 +449,21 @@ class SettingsPage(QWidget):
         super().__init__()
         self.mw = main_win
 
-        lay = QVBoxLayout(self)
+        # Main top-level layout on SettingsPage
+        top_layout = QVBoxLayout(self)
+        top_layout.setContentsMargins(0, 0, 0, 0)
+        top_layout.setSpacing(0)
+
+        # Scroll Area
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.Shape.NoFrame)
+        scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        
+        scroll_content = QWidget()
+        scroll_content.setObjectName("settingsScrollContent")
+        lay = QVBoxLayout(scroll_content)
         lay.setContentsMargins(30, 24, 30, 24)
         lay.setSpacing(20)
 
@@ -581,6 +595,13 @@ class SettingsPage(QWidget):
         if is_admin:
             self.thresh_card = self._create_threshold_card()
             lay.addWidget(self.thresh_card)
+            
+            # Create and add the Security Logs Card!
+            self.logs_card = self._create_logs_card()
+            lay.addWidget(self.logs_card)
+
+        scroll.setWidget(scroll_content)
+        top_layout.addWidget(scroll)
 
     def _fl(self, t):
         l = QLabel(t)
@@ -732,6 +753,137 @@ class SettingsPage(QWidget):
             QMessageBox.information(self, "Success", "Decision thresholds and clinical configuration registry successfully saved.")
         else:
             QMessageBox.critical(self, "Error", "Failed to save clinical configuration.")
+
+    def _create_logs_card(self):
+        card = _card()
+        cl = QVBoxLayout(card)
+        cl.setContentsMargins(24, 20, 24, 20)
+        cl.setSpacing(14)
+
+        t = QLabel("🛡️  Medical Audit Trail & Security Logs Ledger")
+        t.setObjectName("subheading")
+        cl.addWidget(t)
+        cl.addWidget(_sep())
+
+        # Filter bar
+        fl = QHBoxLayout()
+        fl.setSpacing(10)
+        
+        self.search_logs = QLineEdit()
+        self.search_logs.setPlaceholderText("🔍  Filter logs by action, operator, or details...")
+        self.search_logs.setMinimumHeight(40)
+        self.search_logs.textChanged.connect(self._filter_logs)
+        fl.addWidget(self.search_logs, 1)
+
+        ref_btn = QPushButton("🔄  Refresh Ledger")
+        ref_btn.setMinimumHeight(40)
+        ref_btn.setFixedWidth(140)
+        ref_btn.clicked.connect(self.refresh_logs_table)
+        fl.addWidget(ref_btn)
+
+        cl.addLayout(fl)
+
+        # Table widget
+        self.logs_table = QTableWidget()
+        self.logs_table.setColumnCount(4)
+        self.logs_table.setHorizontalHeaderLabels(["Timestamp", "Examiner / Operator", "Clinical Action", "Ledger Details"])
+        self.logs_table.setMinimumHeight(350)
+        
+        # Stylesheet for custom dark table theme inside slate cards
+        self.logs_table.setStyleSheet("""
+            QTableWidget {
+                background-color: #0f172a;
+                border: 1px solid #334155;
+                gridline-color: #1e293b;
+                border-radius: 8px;
+                color: #e2e8f0;
+            }
+            QHeaderView::section {
+                background-color: #1e293b;
+                color: #818cf8;
+                padding: 6px;
+                border: 1px solid #334155;
+                font-weight: bold;
+            }
+            QTableWidget::item {
+                padding: 8px;
+            }
+            QTableWidget::item:selected {
+                background-color: #6366f1;
+                color: white;
+            }
+        """)
+
+        # Set column stretching
+        header = self.logs_table.horizontalHeader()
+        header.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
+        header.setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
+        header.setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)
+        header.setSectionResizeMode(3, QHeaderView.ResizeMode.Stretch)
+
+        self.logs_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
+        self.logs_table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
+        self.logs_table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
+
+        cl.addWidget(self.logs_table)
+        
+        self.refresh_logs_table()
+        
+        return card
+
+    def refresh_logs_table(self):
+        """Fetch latest audit log entries and populate the table."""
+        self.all_logs = database.get_audit_logs()
+        self._populate_logs(self.all_logs)
+
+    def _populate_logs(self, logs_list):
+        self.logs_table.setRowCount(0)
+        for row_idx, log in enumerate(logs_list):
+            self.logs_table.insertRow(row_idx)
+            
+            # Format examiner cell
+            ex_name = log[1] or "System/Unknown"
+            ex_user = f" (@{log[2]})" if log[2] else ""
+            ex_cell = f"{ex_name}{ex_user}"
+            
+            # Parse datetime nicely if possible
+            time_val = str(log[0])
+            if "." in time_val:
+                time_val = time_val.split(".")[0]
+                
+            cols = [time_val, ex_cell, str(log[3]), str(log[4])]
+            
+            for col_idx, val in enumerate(cols):
+                item = QTableWidgetItem(val)
+                item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEditable)
+                
+                # Dynamic alert coloring for critical actions
+                if col_idx == 2 and ("Threshold" in val or "Registered" in val or "Delete" in val):
+                    item.setForeground(Qt.GlobalColor.yellow)
+                elif col_idx == 2 and "Failed" in val:
+                    from PyQt6.QtGui import QColor
+                    item.setForeground(QColor("#ef4444")) # Crimson text alert
+                    
+                self.logs_table.setItem(row_idx, col_idx, item)
+
+    def _filter_logs(self):
+        search_txt = self.search_logs.text().strip().lower()
+        if not search_txt:
+            self._populate_logs(self.all_logs)
+            return
+
+        filtered = []
+        for log in self.all_logs:
+            timestamp, ex_name, ex_user, action, details = log
+            ex_name = ex_name or "System/Unknown"
+            ex_user = ex_user or ""
+            
+            # Build search string containing all columns
+            search_str = f"{timestamp} {ex_name} {ex_user} {action} {details}".lower()
+            if search_txt in search_str:
+                filtered.append(log)
+                
+        self._populate_logs(filtered)
 
 
 class AddExaminerPage(QWidget):

@@ -269,3 +269,19 @@ def get_dashboard_stats():
         "critical_count": critical_count,
         "timeline": timeline_data
     }
+
+
+def get_audit_logs():
+    """Fetch all audit log entries, sorted by timestamp descending, with examiner details."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT a.timestamp, e.examiner_name, e.username, a.action, a.details
+        FROM AuditLog a
+        LEFT JOIN Examiner e ON a.examiner_id = e.examiner_id
+        ORDER BY a.timestamp DESC
+        LIMIT 150
+    ''')
+    logs = cursor.fetchall()
+    conn.close()
+    return logs
