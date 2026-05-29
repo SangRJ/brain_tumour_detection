@@ -98,7 +98,7 @@ class PatientRow(QFrame):
         lay.setContentsMargins(14, 12, 14, 12)
         lay.setSpacing(10)
         
-        icon = QLabel("👤")
+        icon = QLabel("")
         icon.setFont(QFont("Segoe UI", 12))
         lay.addWidget(icon)
         
@@ -131,7 +131,7 @@ class ExaminerRow(QFrame):
         lay.setContentsMargins(14, 12, 14, 12)
         lay.setSpacing(12)
         
-        icon = QLabel("🩺")
+        icon = QLabel("")
         icon.setFont(QFont("Segoe UI", 13))
         lay.addWidget(icon)
         
@@ -171,7 +171,7 @@ class PatientSelectionPage(QWidget):
         lay.setContentsMargins(30, 24, 30, 24)
         lay.setSpacing(20)
 
-        # ── TOP ROW: WELCOME & SYSTEM STATS OVERVIEW ────────────────
+        # TOP ROW: WELCOME & SYSTEM STATS OVERVIEW
         hdr = QHBoxLayout()
         wl = QVBoxLayout()
         wl.setSpacing(3)
@@ -184,7 +184,7 @@ class PatientSelectionPage(QWidget):
         wl.addWidget(welcome)
         
         today_str = datetime.date.today().strftime("%B %d, %Y")
-        sub = QLabel(f"Clinical Dashboard Overview  •  {today_str}")
+        sub = QLabel(f"Clinical Dashboard Overview  {today_str}")
         sub.setObjectName("subtext")
         wl.addWidget(sub)
         hdr.addLayout(wl)
@@ -194,7 +194,7 @@ class PatientSelectionPage(QWidget):
         status_card.setStyleSheet("background-color: #064e3b; border-radius: 8px; padding: 6px 14px;")
         s_lay = QHBoxLayout(status_card)
         s_lay.setContentsMargins(6, 6, 6, 6)
-        s_lbl = QLabel("●  SYSTEM ONLINE")
+        s_lbl = QLabel("SYSTEM ONLINE")
         s_lbl.setStyleSheet("color: #a7f3d0; font-size: 11px; font-weight: bold;")
         s_lay.addWidget(s_lbl)
         hdr.addWidget(status_card)
@@ -206,20 +206,20 @@ class PatientSelectionPage(QWidget):
         
         p_count, e_count, ex_count = get_stats()
         
-        self.kpi_patients = KPICard("👥", "Patients Registered", str(p_count))
-        self.kpi_exams = KPICard("🔬", "Diagnoses Completed", str(e_count))
-        self.kpi_staff = KPICard("🩺", "Authorized Operators", str(ex_count))
+        self.kpi_patients = KPICard("", "Patients Registered", str(p_count))
+        self.kpi_exams = KPICard("", "Diagnoses Completed", str(e_count))
+        self.kpi_staff = KPICard("", "Authorized Operators", str(ex_count))
         
         kpi_lay.addWidget(self.kpi_patients)
         kpi_lay.addWidget(self.kpi_exams)
         kpi_lay.addWidget(self.kpi_staff)
         lay.addLayout(kpi_lay)
 
-        # ── MAIN LAYOUT: SPLIT CARDS ────────────────────────────────
+        # MAIN LAYOUT: SPLIT CARDS
         cols = QHBoxLayout()
         cols.setSpacing(20)
 
-        # Left Column — Patient Directory
+        # Left Column Patient Directory
         left = _card()
         ll = QVBoxLayout(left)
         ll.setContentsMargins(24, 20, 24, 20)
@@ -232,7 +232,7 @@ class PatientSelectionPage(QWidget):
 
         # Search Bar
         self.search = QLineEdit()
-        self.search.setPlaceholderText("🔍  Search patient directory by name...")
+        self.search.setPlaceholderText("Search patient directory by name...")
         self.search.setMinimumHeight(42)
         self.search.textChanged.connect(self._filter_patients)
         ll.addWidget(self.search)
@@ -260,14 +260,14 @@ class PatientSelectionPage(QWidget):
         btn_bar = QHBoxLayout()
         btn_bar.setSpacing(10)
         
-        self.eb = QPushButton("▶  New Examination")
+        self.eb = QPushButton("New Examination")
         self.eb.setObjectName("successBtn")
         self.eb.setMinimumHeight(44)
         self.eb.setEnabled(False)
         self.eb.clicked.connect(self._new_exam)
         btn_bar.addWidget(self.eb, 1)
 
-        self.vb = QPushButton("📊  View Past Results")
+        self.vb = QPushButton("View Past Results")
         self.vb.setMinimumHeight(44)
         self.vb.setEnabled(False)
         self.vb.clicked.connect(self._view_results)
@@ -278,7 +278,7 @@ class PatientSelectionPage(QWidget):
         self._refresh_patient_list()
         cols.addWidget(left, 6)
 
-        # Right Column — Register Patient
+        # Right Column Register Patient
         right = _card()
         rl = QVBoxLayout(right)
         rl.setContentsMargins(24, 20, 24, 20)
@@ -336,7 +336,7 @@ class PatientSelectionPage(QWidget):
         ibl.setContentsMargins(14, 12, 14, 12)
         ibl.setSpacing(4)
         
-        it = QLabel("🔒  Secure Patient Intake Policy")
+        it = QLabel("Secure Patient Intake Policy")
         it.setStyleSheet("color: #f8fafc; font-size: 11px; font-weight: bold;")
         ibl.addWidget(it)
         
@@ -471,7 +471,7 @@ class SettingsPage(QWidget):
         hdr = QHBoxLayout()
         wl = QVBoxLayout()
         wl.setSpacing(3)
-        welcome = QLabel("⚙️  Profile & Security Center")
+        welcome = QLabel("Profile & Security Center")
         welcome.setObjectName("heading")
         wl.addWidget(welcome)
         sub = QLabel("Manage your examiner profile, security settings, and view diagnostic system health.")
@@ -484,7 +484,7 @@ class SettingsPage(QWidget):
         cols = QHBoxLayout()
         cols.setSpacing(20)
 
-        # Left Column — Profile adjustments
+        # Left Column Profile adjustments
         left = _card()
         cl = QVBoxLayout(left)
         cl.setContentsMargins(24, 20, 24, 20)
@@ -527,7 +527,7 @@ class SettingsPage(QWidget):
         cl.addStretch()
         cols.addWidget(left, 5)
 
-        # Right Column — Info panel
+        # Right Column Info panel
         right = _card()
         rl = QVBoxLayout(right)
         rl.setContentsMargins(24, 20, 24, 20)
@@ -545,7 +545,7 @@ class SettingsPage(QWidget):
         bl.setContentsMargins(18, 14, 18, 14)
         bl.setSpacing(6)
 
-        bl.addWidget(QLabel("🩺  ACTIVE SESSION OPERATOR"))
+        bl.addWidget(QLabel("ACTIVE SESSION OPERATOR"))
         name_lbl = QLabel(cur_name or "Examiner")
         name_lbl.setFont(QFont("Segoe UI", 14, QFont.Weight.Bold))
         bl.addWidget(name_lbl)
@@ -573,7 +573,7 @@ class SettingsPage(QWidget):
         health_lay.setSpacing(10)
 
         health_lay.addWidget(self._hl("Database File", "clinic.db  (Active)"))
-        health_lay.addWidget(self._hl("DB Status", "✅ Connected & Encrypted"))
+        health_lay.addWidget(self._hl("DB Status", "Connected & Encrypted"))
         health_lay.addWidget(self._hl("AI Model Host", "TensorFlow Local CPU Runtime"))
         health_lay.addWidget(self._hl("Analysis Portals", "Standard Model + Grad-CAM Convolutional Layer"))
         health_lay.addWidget(self._hl("Diagnostics Cache", "sqlite3 Standard Engine"))
@@ -673,7 +673,7 @@ class SettingsPage(QWidget):
         cl.setContentsMargins(24, 20, 24, 20)
         cl.setSpacing(14)
         
-        t = QLabel("⚙️  Clinical Decision Registry & Operating Thresholds")
+        t = QLabel("Clinical Decision Registry & Operating Thresholds")
         t.setObjectName("subheading")
         cl.addWidget(t)
         cl.addWidget(_sep())
@@ -717,7 +717,7 @@ class SettingsPage(QWidget):
         cl.addLayout(grid)
         
         # Save btn
-        sb = QPushButton("💾  Save Clinical Registry Settings")
+        sb = QPushButton("Save Clinical Registry Settings")
         sb.setObjectName("accentBtn")
         sb.setMinimumHeight(44)
         sb.clicked.connect(self._save_thresholds)
@@ -760,7 +760,7 @@ class SettingsPage(QWidget):
         cl.setContentsMargins(24, 20, 24, 20)
         cl.setSpacing(14)
 
-        t = QLabel("🛡️  Medical Audit Trail & Security Logs Ledger")
+        t = QLabel("Medical Audit Trail & Security Logs Ledger")
         t.setObjectName("subheading")
         cl.addWidget(t)
         cl.addWidget(_sep())
@@ -770,12 +770,12 @@ class SettingsPage(QWidget):
         fl.setSpacing(10)
         
         self.search_logs = QLineEdit()
-        self.search_logs.setPlaceholderText("🔍  Filter logs by action, operator, or details...")
+        self.search_logs.setPlaceholderText("Filter logs by action, operator, or details...")
         self.search_logs.setMinimumHeight(40)
         self.search_logs.textChanged.connect(self._filter_logs)
         fl.addWidget(self.search_logs, 1)
 
-        ref_btn = QPushButton("🔄  Refresh Ledger")
+        ref_btn = QPushButton("Refresh Ledger")
         ref_btn.setMinimumHeight(40)
         ref_btn.setFixedWidth(140)
         ref_btn.clicked.connect(self.refresh_logs_table)
@@ -900,7 +900,7 @@ class AddExaminerPage(QWidget):
         hdr = QHBoxLayout()
         wl = QVBoxLayout()
         wl.setSpacing(3)
-        welcome = QLabel("👤  Personnel Registry")
+        welcome = QLabel("Personnel Registry")
         welcome.setObjectName("heading")
         wl.addWidget(welcome)
         sub = QLabel("Register new practitioners and view all active operators within the diagnostic portal.")
@@ -913,7 +913,7 @@ class AddExaminerPage(QWidget):
         cols = QHBoxLayout()
         cols.setSpacing(20)
 
-        # Left Column — Add form
+        # Left Column Add form
         left = _card()
         cl = QVBoxLayout(left)
         cl.setContentsMargins(24, 20, 24, 20)
@@ -955,7 +955,7 @@ class AddExaminerPage(QWidget):
         cl.addStretch()
         cols.addWidget(left, 5)
 
-        # Right Column — List active clinical users
+        # Right Column List active clinical users
         right = _card()
         rl = QVBoxLayout(right)
         rl.setContentsMargins(24, 20, 24, 20)
@@ -1054,7 +1054,7 @@ class HospitalAnalyticsPage(QWidget):
         hdr = QHBoxLayout()
         wl = QVBoxLayout()
         wl.setSpacing(3)
-        welcome = QLabel("📊  Clinical Analytics & Performance Dashboard")
+        welcome = QLabel("Clinical Analytics & Performance Dashboard")
         welcome.setObjectName("heading")
         wl.addWidget(welcome)
         sub = QLabel("Aggregate hospital diagnostics throughput, AI accuracy bounds, and clinical detection ratios.")
@@ -1063,7 +1063,7 @@ class HospitalAnalyticsPage(QWidget):
         hdr.addLayout(wl)
         
         # Dynamic Refresh button
-        self.refresh_btn = QPushButton("🔄  Refresh Data")
+        self.refresh_btn = QPushButton("Refresh Data")
         self.refresh_btn.setMinimumHeight(40)
         self.refresh_btn.setFixedWidth(140)
         self.refresh_btn.clicked.connect(self.refresh_dashboard)
@@ -1107,10 +1107,10 @@ class HospitalAnalyticsPage(QWidget):
         critical_count = stats["critical_count"]
         
         # Draw dynamic clinical KPI badges
-        self._add_kpi("Total Diagnostic Runs", str(total_scans), "🧬  Throughput", "#6366f1")
-        self._add_kpi("Tumor Detections", str(tumor_count), "⚠️  Positive Cases", "#ef4444")
-        self._add_kpi("Normal Brain Scans", str(normal_count), "✅  Negative Cases", "#10b981")
-        self._add_kpi("High-Risk Critical Alerts", str(critical_count), "🚨  Triage Urgency", "#f59e0b")
+        self._add_kpi("Total Diagnostic Runs", str(total_scans), "Throughput", "#c0c1ff")
+        self._add_kpi("Tumor Detections", str(tumor_count), "Positive Cases", "#ef4444")
+        self._add_kpi("Normal Brain Scans", str(normal_count), "Negative Cases", "#4edea3")
+        self._add_kpi("High-Risk Critical Alerts", str(critical_count), "Triage Urgency", "#ffb95f")
         
         if total_scans == 0:
             no_data = _card()
@@ -1143,7 +1143,7 @@ class HospitalAnalyticsPage(QWidget):
         
         labels = ['Normal', 'Tumor']
         sizes = [normal_count, tumor_count]
-        colors = ['#10b981', '#ef4444'] # Emerald Green / Crimson Red
+        colors = ['#4edea3', '#ef4444'] # Emerald / Crimson
         
         actual_labels = []
         actual_sizes = []
@@ -1192,8 +1192,8 @@ class HospitalAnalyticsPage(QWidget):
             dates = [t[0] for t in timeline]
             counts = [t[1] for t in timeline]
             
-            ax2.plot(dates, counts, marker='o', color='#6366f1', linewidth=2.5, markersize=6, label='Scans Run')
-            ax2.fill_between(dates, counts, color='#6366f1', alpha=0.15)
+            ax2.plot(dates, counts, marker='o', color='#c0c1ff', linewidth=2.5, markersize=6, label='Scans Run')
+            ax2.fill_between(dates, counts, color='#c0c1ff', alpha=0.15)
         else:
             ax2.text(0.5, 0.5, 'Insufficient activity logs', color='white', ha='center', va='center')
             

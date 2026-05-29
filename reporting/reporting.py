@@ -45,9 +45,13 @@ class ClinicalReportGenerator:
         pdf.set_fill_color(*primary_color)
         pdf.rect(0, 0, 210, 40, "F")
         
+        from core import config_registry
+        cfg = config_registry.load_config()
+        hospital_name = cfg.get("hospital_name", "Neural Diagnostics Center")
+
         pdf.set_text_color(255, 255, 255)
         pdf.set_font("Helvetica", "B", 20)
-        pdf.cell(0, 10, "MEDDIAGNOSTICS MEDICAL CENTER", new_x="LMARGIN", new_y="NEXT", align="C")
+        pdf.cell(0, 10, hospital_name.upper(), new_x="LMARGIN", new_y="NEXT", align="C")
         pdf.set_font("Helvetica", "I", 10)
         pdf.cell(0, 5, "AI-Powered Neurological Image Analysis & Diagnostic Portal", new_x="LMARGIN", new_y="NEXT", align="C")
         

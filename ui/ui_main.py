@@ -1,5 +1,5 @@
 """
-ui_main.py — Main window with sidebar navigation.
+ui_main.py Main window with sidebar navigation.
 """
 from PyQt6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel,
@@ -38,9 +38,12 @@ class MainWindow(QMainWindow):
         brand_w = QWidget()
         bl = QVBoxLayout(brand_w)
         bl.setContentsMargins(24, 28, 24, 24)
-        brand = QLabel("🧠  MedDiagnostics")
+        brand = QLabel("Neural Diagnostics")
         brand.setObjectName("brand")
         bl.addWidget(brand)
+        subtitle = QLabel("Clinical AI Suite")
+        subtitle.setObjectName("muted")
+        bl.addWidget(subtitle)
         sb_layout.addWidget(brand_w)
 
         # User card
@@ -51,7 +54,7 @@ class MainWindow(QMainWindow):
         uc.setObjectName("userCard")
         ucl = QVBoxLayout(uc)
         ucl.setContentsMargins(16, 14, 16, 14)
-        un = QLabel(f"👤  {name}")
+        un = QLabel(f"Dr. {name}")
         un.setFont(QFont("Segoe UI", 13, QFont.Weight.Bold))
         ucl.addWidget(un)
         if info and info[2]:
@@ -80,11 +83,11 @@ class MainWindow(QMainWindow):
             if username == "admin" or (role and role.lower() == "admin"):
                 is_admin = True
 
-        self._add_nav("🔍  Patient Selection", 0)
-        self._add_nav("📊  Hospital Analytics", 1)
-        self._add_nav("⚙️  Settings", 2)
+        self._add_nav("Patient Selection", 0)
+        self._add_nav("Hospital Analytics", 1)
+        self._add_nav("Settings & Security", 2)
         if is_admin:
-            self._add_nav("👤  Add Examiner", 3)
+            self._add_nav("System Administration", 3)
 
         sb_layout.addWidget(nav_w)
         sb_layout.addStretch()
@@ -93,7 +96,7 @@ class MainWindow(QMainWindow):
         logout_w = QWidget()
         lo_l = QVBoxLayout(logout_w)
         lo_l.setContentsMargins(12, 0, 12, 20)
-        logout_btn = QPushButton("🚪  Logout")
+        logout_btn = QPushButton("Logout / Lock Session")
         logout_btn.setObjectName("logoutBtn")
         logout_btn.setMinimumHeight(44)
         logout_btn.clicked.connect(self._logout)

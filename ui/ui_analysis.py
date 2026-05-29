@@ -132,7 +132,7 @@ class AnalysisPage(QWidget):
         self.analyze_btn.setEnabled(False)
         self.analyze_btn.clicked.connect(self._analyze)
         
-        self.print_btn = QPushButton("🖨️  Print Report")
+        self.print_btn = QPushButton("Print Report")
         self.print_btn.setMinimumHeight(44)
         self.print_btn.setEnabled(False)
         self.print_btn.clicked.connect(self._print_report)
@@ -309,8 +309,8 @@ class AnalysisPage(QWidget):
         self.conf_bar.setValue(int(confidence * 1000))
         self.conf_pct.setText(f"{confidence * 100:.1f}%")
 
-        # ─── SECURE FILE STORAGE & INTEGRATION ───
-        base_dir = os.path.dirname(os.path.abspath(__file__))
+        # SECURE FILE STORAGE & INTEGRATION
+        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         
         # 1. Save Grad-CAM Heatmap
         self.hm_save_path = "heatmap_error"
@@ -404,7 +404,7 @@ class AnalysisPage(QWidget):
         date_clean = datetime.date.today().strftime("%Y-%m-%d")
         
         # Ensure reports folder exists inside workspace
-        base_dir = os.path.dirname(os.path.abspath(__file__))
+        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         reports_dir = os.path.join(base_dir, "reports")
         os.makedirs(reports_dir, exist_ok=True)
         

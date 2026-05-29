@@ -1,5 +1,5 @@
 """
-ui_login.py — Login window for Brain Tumour Diagnostics.
+ui_login.py Login window for Brain Tumour Diagnostics.
 """
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QLabel, QLineEdit, QPushButton, QMessageBox, QHBoxLayout
@@ -12,7 +12,7 @@ from core import database
 class LoginWindow(QWidget):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Brain Tumor Diagnostics — Login")
+        self.setWindowTitle("Brain Tumor Diagnostics Login")
         self.setMinimumSize(500, 600)
         self.resize(520, 650)
         self.setObjectName("appRoot")
@@ -27,13 +27,13 @@ class LoginWindow(QWidget):
         cl.setContentsMargins(40, 40, 40, 40)
         cl.setSpacing(8)
 
-        icon = QLabel("🧠")
-        icon.setFont(QFont("Segoe UI", 38))
+        icon = QLabel("Neural Diagnostics")
+        icon.setObjectName("brand")
         icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
         cl.addWidget(icon)
 
-        title = QLabel("Diagnostics Portal")
-        title.setObjectName("heading")
+        title = QLabel("Clinical AI Suite")
+        title.setObjectName("muted")
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         cl.addWidget(title)
 
