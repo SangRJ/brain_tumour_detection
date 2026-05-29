@@ -7,7 +7,7 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QFont
-import database
+from core import database
 
 
 class MainWindow(QMainWindow):
@@ -112,7 +112,7 @@ class MainWindow(QMainWindow):
         main_layout.addWidget(content)
 
         # Pages - lazy import to avoid circular imports
-        from ui_pages import PatientSelectionPage, SettingsPage, AddExaminerPage, HospitalAnalyticsPage
+        from ui.ui_pages import PatientSelectionPage, SettingsPage, AddExaminerPage, HospitalAnalyticsPage
         self.pages = {
             0: PatientSelectionPage(self),
             1: HospitalAnalyticsPage(self),
@@ -160,12 +160,12 @@ class MainWindow(QMainWindow):
 
     def _logout(self):
         try:
-            import audit_logger
+            from core import audit_logger
             audit_logger.log_action(self.examiner_id, "Portal Session Logged Out", "Examiner safely terminated clinical session.")
         except Exception as le:
             print(f"[Audit Log Error] Failed logging event: {le}")
 
-        from ui_login import LoginWindow
+        from ui.ui_login import LoginWindow
         self.login = LoginWindow()
         self.login.show()
         self.close()

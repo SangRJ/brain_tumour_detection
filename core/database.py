@@ -242,7 +242,7 @@ def get_dashboard_stats():
     normal_count = cursor.fetchone()[0]
     
     # 4. Critical cases (above critical confidence threshold)
-    import config_registry
+    from core import config_registry
     cfg = config_registry.load_config()
     crit_thresh = cfg.get("critical_alert_threshold", 0.85)
     

@@ -7,7 +7,7 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QFont
 from fpdf import FPDF
 import os, subprocess
-import database
+from core import database
 
 
 class PatientHistoryPage(QWidget):
@@ -104,7 +104,7 @@ class PatientHistoryPage(QWidget):
 
     def _gen_single_report(self, exam):
         # exam: (exam_id, image_name, prediction, confidence_score, exam_date, examiner_name, heatmap_path)
-        from reporting import ClinicalReportGenerator
+        from reporting.reporting import ClinicalReportGenerator
         
         info = database.get_patient_info(self.pid)
         if not info:
@@ -138,7 +138,7 @@ class PatientHistoryPage(QWidget):
             
             # ─── LOG EVENT ───
             try:
-                import audit_logger
+                from core import audit_logger
                 audit_logger.log_action(
                     examiner_id=self.mw.examiner_id,
                     action="Diagnostic Report Exported",
@@ -208,7 +208,7 @@ class PatientHistoryPage(QWidget):
             
             # ─── LOG EVENT ───
             try:
-                import audit_logger
+                from core import audit_logger
                 audit_logger.log_action(
                     examiner_id=self.mw.examiner_id,
                     action="History Exported",

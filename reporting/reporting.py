@@ -5,7 +5,7 @@ and displays the original MRI scan side-by-side with the AI-generated Grad-CAM h
 """
 from fpdf import FPDF
 import os
-import database
+from core import database
 
 
 class ClinicalReportGenerator:

@@ -6,7 +6,7 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QFont
-import database
+from core import database
 
 
 class LoginWindow(QWidget):
@@ -79,7 +79,7 @@ class LoginWindow(QWidget):
         u = self.username.text().strip()
         p = self.password.text().strip()
         
-        import audit_logger
+        from core import audit_logger
         
         if database.needs_password_setup(u):
             if not p:
@@ -96,7 +96,7 @@ class LoginWindow(QWidget):
             except Exception as le:
                 print(f"[Audit Log Error] Failed logging event: {le}")
 
-            from ui_main import MainWindow
+            from ui.ui_main import MainWindow
             self.main = MainWindow(eid)
             self.main.show()
             self.close()

@@ -4,7 +4,7 @@ Saves log records both to a local 'audit.log' text file and an SQLite 'AuditLog'
 """
 import os
 import datetime
-import database
+from core import database
 
 LOG_FILE = "audit.log"
 

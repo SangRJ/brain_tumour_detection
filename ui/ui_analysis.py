@@ -9,10 +9,10 @@ from PIL import Image
 import numpy as np
 import os
 
-from inference import BrainTumorPredictor
-from gradcam import GradCAM
-from utils import preprocess_image, validate_image_file, overlay_heatmap
-import database
+from engine.inference import BrainTumorPredictor
+from engine.gradcam import GradCAM
+from engine.utils import preprocess_image, validate_image_file, overlay_heatmap
+from core import database
 
 IMG_SIZE = (600, 600)
 
@@ -23,7 +23,7 @@ class _ModelLoader(QThread):
 
     def run(self):
         try:
-            import config_registry
+            from core import config_registry
             cfg = config_registry.load_config()
             thresh = cfg.get("confidence_threshold", 0.50)
             
@@ -364,7 +364,7 @@ class AnalysisPage(QWidget):
 
         # 4. Write to Medical Audit Trail Log
         try:
-            import audit_logger
+            from core import audit_logger
             fn = os.path.basename(self.current_path)
             audit_logger.log_action(
                 examiner_id=self.eid,
@@ -391,7 +391,7 @@ class AnalysisPage(QWidget):
         if not hasattr(self, "last_exam_id") or not self.last_exam_id:
             return
             
-        from reporting import ClinicalReportGenerator
+        from reporting.reporting import ClinicalReportGenerator
         import subprocess
         import datetime
         
@@ -426,7 +426,7 @@ class AnalysisPage(QWidget):
             
             # Log print action
             try:
-                import audit_logger
+                from core import audit_logger
                 audit_logger.log_action(
                     examiner_id=self.eid,
                     action="Diagnostic Report Exported",

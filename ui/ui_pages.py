@@ -6,7 +6,7 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QFont
-import database
+from core import database
 import datetime
 
 ROLES = ["Radiologist", "Neurologist", "Neurosurgeon", "Oncologist", "Resident", "Technician", "Other"]
@@ -400,13 +400,13 @@ class PatientSelectionPage(QWidget):
     def _new_exam(self):
         if not self.selected_pid:
             return
-        from ui_analysis import AnalysisPage
+        from ui.ui_analysis import AnalysisPage
         self.mw.push_page(AnalysisPage(self.mw, self.selected_pid))
 
     def _view_results(self):
         if not self.selected_pid:
             return
-        from ui_history import PatientHistoryPage
+        from ui.ui_history import PatientHistoryPage
         self.mw.push_page(PatientHistoryPage(self.mw, self.selected_pid))
 
     def _add(self):
@@ -423,7 +423,7 @@ class PatientSelectionPage(QWidget):
         
         # Log patient intake
         try:
-            import audit_logger
+            from core import audit_logger
             audit_logger.log_action(
                 examiner_id=self.mw.examiner_id,
                 action="Patient Intake Registered",
@@ -440,7 +440,7 @@ class PatientSelectionPage(QWidget):
         self.pgender.clear()
         self.pcontact.clear()
         
-        from ui_analysis import AnalysisPage
+        from ui.ui_analysis import AnalysisPage
         self.mw.push_page(AnalysisPage(self.mw, pid))
 
 
@@ -610,7 +610,7 @@ class SettingsPage(QWidget):
             database.update_examiner_name(self.mw.examiner_id, n)
             
             try:
-                import audit_logger
+                from core import audit_logger
                 audit_logger.log_action(
                     examiner_id=self.mw.examiner_id,
                     action="Account Profile Updated",
@@ -629,7 +629,7 @@ class SettingsPage(QWidget):
             database.update_examiner_password(self.mw.examiner_id, p)
             
             try:
-                import audit_logger
+                from core import audit_logger
                 audit_logger.log_action(
                     examiner_id=self.mw.examiner_id,
                     action="Account Password Updated",
@@ -644,7 +644,7 @@ class SettingsPage(QWidget):
             QMessageBox.warning(self, "Warning", "Password cannot be empty.")
 
     def _create_threshold_card(self):
-        import config_registry
+        from core import config_registry
         cfg = config_registry.load_config()
         
         card = _card()
@@ -705,7 +705,7 @@ class SettingsPage(QWidget):
         return card
 
     def _save_thresholds(self):
-        import config_registry
+        from core import config_registry
         
         cfg = {
             "hospital_name": self.hospital_e.text().strip(),
@@ -720,7 +720,7 @@ class SettingsPage(QWidget):
         if ok:
             # Audit log trace
             try:
-                import audit_logger
+                from core import audit_logger
                 audit_logger.log_action(
                     examiner_id=self.mw.examiner_id,
                     action="Clinical Threshold Registry Updated",
@@ -872,7 +872,7 @@ class AddExaminerPage(QWidget):
         ok = database.add_examiner(u, "", n, self.role_cb.currentText(), self.dept_cb.currentText())
         if ok:
             try:
-                import audit_logger
+                from core import audit_logger
                 audit_logger.log_action(
                     examiner_id=self.mw.examiner_id,
                     action="Staff Operator Registered",

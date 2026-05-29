@@ -34,7 +34,8 @@ class BrainTumorPredictor:
         """
         Load the trained TensorFlow model.
         """
-        base_dir = os.path.dirname(os.path.abspath(__file__))
+        # Resolve relative to the project root (parent directory of engine package)
+        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         full_model_path = os.path.join(base_dir, self.model_path)
 
         if not os.path.exists(full_model_path):

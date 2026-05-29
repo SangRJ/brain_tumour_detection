@@ -1,10 +1,10 @@
 import sys
 from PyQt6.QtWidgets import QApplication
 from PyQt6.QtGui import QFont
-import database
-import audit_logger
+from core import database
+from core import audit_logger
 from theme import QSS
-from ui_login import LoginWindow
+from ui.ui_login import LoginWindow
 
 
 def main():
