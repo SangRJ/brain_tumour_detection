@@ -33,11 +33,18 @@ class GradCAM:
             return x[0]
         return x
 
-    def generate_heatmap(self, image_array):
+    def generate_heatmap(self, image_array, predicted_label="Tumor"):
         """Generate a Grad-CAM heatmap for the given preprocessed image.
+
+        The heatmap highlights the regions most responsible for the model's
+        actual prediction. For "Tumor" predictions the gradient targets the
+        positive logit; for "No Tumor" the gradient is negated so it
+        highlights what drove the healthy-tissue decision.
 
         Args:
             image_array: np.ndarray of shape (1, H, W, C), normalized.
+            predicted_label: "Tumor" or "No Tumor" — controls gradient
+                direction so the heatmap matches the prediction made.
 
         Returns:
             np.ndarray: 2D heatmap with values in [0, 1], shape matches
@@ -63,6 +70,11 @@ class GradCAM:
             # inverse-sigmoid: logit = log(p / (1 - p))
             p_clipped = tf.clip_by_value(p, 1e-7, 1.0 - 1e-7)
             class_score = tf.math.log(p_clipped / (1.0 - p_clipped))
+
+            # For "No Tumor", negate the score so gradients highlight
+            # regions that drove the model away from tumor prediction.
+            if predicted_label != "Tumor":
+                class_score = -class_score
 
         grads = tape.gradient(class_score, conv_outputs)
 
@@ -93,3 +105,4 @@ class GradCAM:
             heatmap = heatmap / max_val
 
         return heatmap.numpy()
+

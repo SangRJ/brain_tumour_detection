@@ -64,19 +64,17 @@ def validate_image_file(file_path):
     return file_path.lower().endswith(valid_extensions)
 
 
-def overlay_heatmap(original_img, heatmap, alpha=0.4, model_input_size=(224, 224)):
+def overlay_heatmap(original_img, heatmap, alpha=0.5, model_input_size=(224, 224)):
     """
     Overlay Grad-CAM heatmap on the original MRI image.
 
-    The heatmap is computed in model-input space (e.g. 224×224). To avoid
-    spatial offset when the original image has a different aspect ratio,
-    we composite in model-input space first and then resize back to the
-    original dimensions.
+    A low activation threshold removes background noise, while a fixed
+    alpha blend in the active region keeps highlights clearly visible.
 
     Args:
         original_img (PIL.Image or np.ndarray): Original MRI image
         heatmap (np.ndarray): 2D Grad-CAM heatmap with values in [0, 1]
-        alpha (float): Transparency factor for overlay
+        alpha (float): Blend factor for the colored overlay
         model_input_size (tuple): (width, height) the model was fed
 
     Returns:
@@ -96,20 +94,15 @@ def overlay_heatmap(original_img, heatmap, alpha=0.4, model_input_size=(224, 224
             raise ValueError("Heatmap must be a 2D array")
 
         orig_h, orig_w = original_img.shape[:2]
-        mw, mh = model_input_size  # width, height
 
-        # --- Work in model-input space for perfect alignment ---
-        aligned_img = cv2.resize(
-            original_img, (mw, mh), interpolation=cv2.INTER_LINEAR
-        )
-
+        # --- Resize heatmap directly to original image dimensions ---
         heatmap_resized = cv2.resize(
-            heatmap.astype(np.float32), (mw, mh),
+            heatmap.astype(np.float32), (orig_w, orig_h),
             interpolation=cv2.INTER_CUBIC
         )
 
-        # Smooth the low-res heatmap to remove blocky upscale artifacts
-        ksize = max(3, mw // 14) | 1  # ensure odd kernel
+        # Smooth the upscaled heatmap to remove blocky artifacts
+        ksize = max(3, min(orig_w, orig_h) // 14) | 1  # ensure odd kernel
         heatmap_resized = cv2.GaussianBlur(heatmap_resized, (ksize, ksize), 0)
 
         # Re-normalize after blur
@@ -117,11 +110,13 @@ def overlay_heatmap(original_img, heatmap, alpha=0.4, model_input_size=(224, 224
         if hmax > 0:
             heatmap_resized = heatmap_resized / hmax
 
+        # --- Suppress weak activations (bottom 15%) to cut edge noise ---
+        threshold = 0.15
+        heatmap_resized[heatmap_resized < threshold] = 0.0
+
         # --- Build foreground mask so heatmap only covers brain tissue ---
-        gray = cv2.cvtColor(aligned_img, cv2.COLOR_RGB2GRAY)
-        # Threshold: pixels brighter than ~5% of max are "foreground"
+        gray = cv2.cvtColor(original_img, cv2.COLOR_RGB2GRAY)
         _, fg_mask = cv2.threshold(gray, 15, 255, cv2.THRESH_BINARY)
-        # Light morphological close to fill small holes in the mask
         kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (7, 7))
         fg_mask = cv2.morphologyEx(fg_mask, cv2.MORPH_CLOSE, kernel)
         fg_mask_f = (fg_mask / 255.0).astype(np.float32)
@@ -134,18 +129,16 @@ def overlay_heatmap(original_img, heatmap, alpha=0.4, model_input_size=(224, 224
         heatmap_colored = cv2.applyColorMap(heatmap_uint8, cv2.COLORMAP_JET)
         heatmap_colored = cv2.cvtColor(heatmap_colored, cv2.COLOR_BGR2RGB)
 
-        # Blend only where foreground exists; keep original elsewhere
-        fg_mask_3ch = np.stack([fg_mask_f] * 3, axis=-1)
-        blended = cv2.addWeighted(aligned_img, 1 - alpha, heatmap_colored, alpha, 0)
-        overlay = np.where(fg_mask_3ch > 0, blended, aligned_img)
+        # --- Blend: full alpha where active, original where not ---
+        # Build a binary mask of where heatmap has any activation
+        active = (heatmap_resized > 0).astype(np.float32)
+        active_3ch = np.stack([active] * 3, axis=-1)
 
-        # --- Resize back to original dimensions for display ---
-        if (orig_w, orig_h) != (mw, mh):
-            overlay = cv2.resize(
-                overlay, (orig_w, orig_h), interpolation=cv2.INTER_LINEAR
-            )
+        blended = cv2.addWeighted(original_img, 1 - alpha, heatmap_colored, alpha, 0)
+        overlay = np.where(active_3ch > 0, blended, original_img)
 
         return overlay
 
     except Exception as e:
         raise ValueError(f"Error overlaying heatmap: {str(e)}")
+

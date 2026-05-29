@@ -321,7 +321,7 @@ class PatientSelectionPage(QWidget):
         rl.addLayout(form_grid)
         rl.addSpacing(4)
 
-        ab = QPushButton("Add & Initiate Scan")
+        ab = QPushButton("Add and Initiate Scan")
         ab.setObjectName("accentBtn")
         ab.setMinimumHeight(44)
         ab.clicked.connect(self._add)
@@ -351,8 +351,10 @@ class PatientSelectionPage(QWidget):
 
     def _refresh_patient_list(self):
         # Clear layout
-        for r in self.rows_list:
-            r.deleteLater()
+        while self.list_lay.count():
+            item = self.list_lay.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
         self.rows_list.clear()
         self.selected_pid = None
         self.eb.setEnabled(False)
@@ -635,12 +637,10 @@ class AddExaminerPage(QWidget):
         cl.addSpacing(4)
 
         self.uname = QLineEdit(); self.uname.setPlaceholderText("Select username"); self.uname.setMinimumHeight(42)
-        self.pw = QLineEdit(); self.pw.setPlaceholderText("Select secure password"); self.pw.setEchoMode(QLineEdit.EchoMode.Password); self.pw.setMinimumHeight(42)
         self.fname = QLineEdit(); self.fname.setPlaceholderText("Practitioner's full name"); self.fname.setMinimumHeight(42)
 
         cl.addWidget(self._fl("Credentials Details"))
         cl.addWidget(self.uname)
-        cl.addWidget(self.pw)
         cl.addWidget(self.fname)
 
         cl.addSpacing(4)
@@ -658,7 +658,7 @@ class AddExaminerPage(QWidget):
         cl.addWidget(self.dept_cb)
 
         cl.addSpacing(14)
-        sb = QPushButton("Save & Register Operator")
+        sb = QPushButton("Register Operator")
         sb.setObjectName("successBtn")
         sb.setMinimumHeight(44)
         sb.clicked.connect(self._save)
@@ -694,6 +694,16 @@ class AddExaminerPage(QWidget):
         cols.addWidget(right, 5)
 
         lay.addLayout(cols, 1)
+        
+        info = database.get_examiner_info(self.mw.examiner_id)
+        is_admin = (info[2] == "Admin") if info else False
+        if not is_admin:
+            self.uname.setEnabled(False)
+            self.fname.setEnabled(False)
+            self.role_cb.setEnabled(False)
+            self.dept_cb.setEnabled(False)
+            sb.setEnabled(False)
+            t.setText("Register Clinical Staff (Admin Only)")
 
     def _fl(self, t):
         l = QLabel(t)
@@ -702,8 +712,10 @@ class AddExaminerPage(QWidget):
 
     def _refresh_roster(self):
         # Clear roster items
-        for r in self.rows_list:
-            r.deleteLater()
+        while self.roster_lay.count():
+            item = self.roster_lay.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
         self.rows_list.clear()
 
         examiners = get_all_examiners()
@@ -716,14 +728,14 @@ class AddExaminerPage(QWidget):
         self.roster_lay.addStretch()
 
     def _save(self):
-        u, p, n = self.uname.text().strip(), self.pw.text().strip(), self.fname.text().strip()
-        if not all([u, p, n]):
-            QMessageBox.warning(self, "Warning", "Username, Password, and Full Name are strictly required.")
+        u, n = self.uname.text().strip(), self.fname.text().strip()
+        if not all([u, n]):
+            QMessageBox.warning(self, "Warning", "Username and Full Name are strictly required.")
             return
-        ok = database.add_examiner(u, p, n, self.role_cb.currentText(), self.dept_cb.currentText())
+        ok = database.add_examiner(u, "", n, self.role_cb.currentText(), self.dept_cb.currentText())
         if ok:
             QMessageBox.information(self, "Success", f"Clinical credentials for operator '{u}' successfully generated.")
-            self.uname.clear(); self.pw.clear(); self.fname.clear()
+            self.uname.clear(); self.fname.clear()
             self._refresh_roster()
         else:
             QMessageBox.critical(self, "Error", "Registration failed: Username already exists.")

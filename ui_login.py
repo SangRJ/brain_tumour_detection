@@ -78,6 +78,14 @@ class LoginWindow(QWidget):
     def _login(self):
         u = self.username.text().strip()
         p = self.password.text().strip()
+        
+        if database.needs_password_setup(u):
+            if not p:
+                QMessageBox.information(self, "Password Setup", "This is your first login. Please enter a secure password to set it.")
+                return
+            database.setup_password(u, p)
+            QMessageBox.information(self, "Password Setup", "Your password has been successfully set. You will now be logged in.")
+            
         eid = database.authenticate(u, p)
         if eid:
             from ui_main import MainWindow

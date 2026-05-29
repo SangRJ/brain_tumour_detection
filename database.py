@@ -61,7 +61,7 @@ def init_db():
     # Add default examiner if table is empty
     cursor.execute('SELECT COUNT(*) FROM Examiner')
     if cursor.fetchone()[0] == 0:
-        add_examiner("admin", "password", "Default Administrator", "Admin", "Radiology")
+        add_examiner("admin", "password", "Rogers", "Admin", "Radiology")
 
     conn.close()
 
@@ -86,7 +86,7 @@ def add_examiner(username, password, examiner_name, role, department):
     """Add a new examiner to the database."""
     conn = get_connection()
     cursor = conn.cursor()
-    hashed_password = _hash_password(password)
+    hashed_password = _hash_password(password) if password else ""
     
     try:
         cursor.execute('''
@@ -100,6 +100,24 @@ def add_examiner(username, password, examiner_name, role, department):
     
     conn.close()
     return success
+
+def needs_password_setup(username):
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT password FROM Examiner WHERE username = ?', (username,))
+    res = cursor.fetchone()
+    conn.close()
+    if res and res[0] == "":
+        return True
+    return False
+
+def setup_password(username, new_password):
+    conn = get_connection()
+    cursor = conn.cursor()
+    hashed = _hash_password(new_password)
+    cursor.execute('UPDATE Examiner SET password = ? WHERE username = ?', (hashed, username))
+    conn.commit()
+    conn.close()
 
 def get_all_patients():
     """Retrieve a list of all patients."""

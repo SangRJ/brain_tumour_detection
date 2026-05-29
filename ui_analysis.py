@@ -14,7 +14,7 @@ from gradcam import GradCAM
 from utils import preprocess_image, validate_image_file, overlay_heatmap
 import database
 
-IMG_SIZE = (380, 380)
+IMG_SIZE = (600, 600)
 
 
 class _ModelLoader(QThread):
@@ -48,7 +48,7 @@ class _AnalysisWorker(QThread):
             label, confidence = self.predictor.predict(preprocessed)
             overlay_pil = None
             try:
-                hm = self.gradcam.generate_heatmap(preprocessed)
+                hm = self.gradcam.generate_heatmap(preprocessed, predicted_label=label)
                 ov = overlay_heatmap(self.orig_img, hm)
                 overlay_pil = Image.fromarray(ov.astype("uint8"))
             except:
@@ -86,9 +86,6 @@ class AnalysisPage(QWidget):
         # Header
         hdr = QHBoxLayout()
         inner = QHBoxLayout()
-        icon = QLabel("🧠")
-        icon.setFont(QFont("Segoe UI", 34))
-        inner.addWidget(icon)
 
         txt_w = QWidget()
         tl = QVBoxLayout(txt_w)
@@ -104,7 +101,7 @@ class AnalysisPage(QWidget):
         hdr.addLayout(inner)
         hdr.addStretch()
 
-        back = QPushButton("⬅  Back")
+        back = QPushButton("Back")
         back.setObjectName("backBtn")
         back.clicked.connect(lambda: self.mw.pop_page(self))
         hdr.addWidget(back)
@@ -114,84 +111,99 @@ class AnalysisPage(QWidget):
         hdr.addWidget(warn)
         lay.addLayout(hdr)
 
-        # 3-column content
-        cols = QHBoxLayout()
-        cols.setSpacing(12)
-
-        # Left - original scan
-        left = self._card("📸  Original Scan")
-        self.orig_lbl = QLabel("No image loaded")
-        self.orig_lbl.setObjectName("imagePlaceholder")
-        self.orig_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.orig_lbl.setMinimumSize(300, 300)
-        left.layout().addWidget(self.orig_lbl, 1)
-        cols.addWidget(left)
-
-        # Centre - controls & results
-        mid = self._card("📊  Results & Controls")
-        ml = mid.layout()
-
-        self.load_btn = QPushButton("📁  Load MRI")
+        # Top section - Controls & Results
+        top_card = self._card("Results & Controls")
+        tl_layout = QHBoxLayout()
+        tl_layout.setSpacing(30)
+        
+        # Controls
+        ctrl_layout = QVBoxLayout()
+        self.load_btn = QPushButton("Load MRI")
         self.load_btn.setMinimumHeight(44)
         self.load_btn.clicked.connect(self._load_image)
-        ml.addWidget(self.load_btn)
-
-        self.analyze_btn = QPushButton("🔍  Analyze Image")
+        
+        self.analyze_btn = QPushButton("Analyze Image")
         self.analyze_btn.setObjectName("accentBtn")
         self.analyze_btn.setMinimumHeight(44)
         self.analyze_btn.setEnabled(False)
         self.analyze_btn.clicked.connect(self._analyze)
-        ml.addWidget(self.analyze_btn)
+        
+        ctrl_layout.addWidget(self.load_btn)
+        ctrl_layout.addWidget(self.analyze_btn)
+        ctrl_layout.addStretch()
+        tl_layout.addLayout(ctrl_layout, 1)
 
-        ml.addWidget(self._sep())
+        # Vertical Separator
+        v_sep = QFrame()
+        v_sep.setFrameShape(QFrame.Shape.VLine)
+        v_sep.setFrameShadow(QFrame.Shadow.Sunken)
+        v_sep.setStyleSheet("color: #334155;")
+        tl_layout.addWidget(v_sep)
 
-        self.res_icon = QLabel("⏳")
-        self.res_icon.setFont(QFont("Segoe UI", 42))
-        self.res_icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        ml.addWidget(self.res_icon)
-
+        # Results
+        res_layout = QVBoxLayout()
+        
         self.res_title = QLabel("Awaiting Scan")
         self.res_title.setObjectName("resultTitle")
-        self.res_title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.res_title.setAlignment(Qt.AlignmentFlag.AlignLeft)
         self.res_title.setStyleSheet("color: #94a3b8;")
-        ml.addWidget(self.res_title)
+        res_layout.addWidget(self.res_title)
 
+        conf_hbox = QHBoxLayout()
         self.conf_label = QLabel("")
         self.conf_label.setObjectName("subtext")
-        self.conf_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        ml.addWidget(self.conf_label)
+        conf_hbox.addWidget(self.conf_label)
+        
+        self.conf_pct = QLabel("")
+        self.conf_pct.setFont(QFont("Segoe UI", 13, QFont.Weight.Bold))
+        conf_hbox.addStretch()
+        conf_hbox.addWidget(self.conf_pct)
+        res_layout.addLayout(conf_hbox)
 
         self.conf_bar = QProgressBar()
         self.conf_bar.setMinimumHeight(14)
         self.conf_bar.setRange(0, 1000)
         self.conf_bar.setValue(0)
-        ml.addWidget(self.conf_bar)
+        res_layout.addWidget(self.conf_bar)
 
-        self.conf_pct = QLabel("")
-        self.conf_pct.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.conf_pct.setFont(QFont("Segoe UI", 13, QFont.Weight.Bold))
-        ml.addWidget(self.conf_pct)
-
-        ml.addStretch()
-
-        self.status_lbl = QLabel("●  Ready")
+        self.status_lbl = QLabel("Ready")
         self.status_lbl.setObjectName("statusLabel")
-        ml.addWidget(self.status_lbl)
-        cols.addWidget(mid)
+        res_layout.addWidget(self.status_lbl)
+        
+        res_layout.addStretch()
+        tl_layout.addLayout(res_layout, 2)
+        
+        top_card.layout().addLayout(tl_layout)
+        lay.addWidget(top_card)
+
+        # Images section
+        img_cols = QHBoxLayout()
+        img_cols.setSpacing(12)
+
+        # Left - original scan
+        left = self._card("Original Scan")
+        self.orig_lbl = QLabel("No image loaded")
+        self.orig_lbl.setObjectName("imagePlaceholder")
+        self.orig_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.orig_lbl.setMinimumSize(400, 400)
+        
+        # Give the image label stretching preference
+        left.layout().addWidget(self.orig_lbl, 1)
+        img_cols.addWidget(left, 1)
 
         # Right - heatmap
-        right = self._card("🔥  Grad-CAM Heatmap")
+        right = self._card("Grad-CAM Heatmap")
         self.hm_lbl = QLabel("No heatmap generated")
         self.hm_lbl.setObjectName("imagePlaceholder")
         self.hm_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.hm_lbl.setMinimumSize(300, 300)
+        self.hm_lbl.setMinimumSize(400, 400)
         right.layout().addWidget(self.hm_lbl, 1)
-        cols.addWidget(right)
+        img_cols.addWidget(right, 1)
 
-        lay.addLayout(cols, 1)
+        lay.addLayout(img_cols, 1)
 
         # Load model in background
-        self._set_status("Loading AI model…", "#f59e0b")
+        self._set_status("Loading AI model...", "#f59e0b")
         self._loader = _ModelLoader()
         self._loader.done.connect(self._on_model_loaded)
         self._loader.error.connect(self._on_model_error)
@@ -222,11 +234,11 @@ class AnalysisPage(QWidget):
     def _on_model_loaded(self, p, g):
         self.predictor = p
         self.gradcam = g
-        self._set_status("✓  Model loaded — ready", "#10b981")
+        self._set_status("Model loaded - ready", "#10b981")
 
     def _on_model_error(self, e):
         QMessageBox.critical(self, "Model Error", f"Failed to load model:\n\n{e}")
-        self._set_status("✗  Model loading failed", "#ef4444")
+        self._set_status("Model loading failed", "#ef4444")
 
     def _load_image(self):
         path, _ = QFileDialog.getOpenFileName(self, "Select MRI Image", "", "Image Files (*.png *.jpg *.jpeg);;All Files (*)")
@@ -242,7 +254,6 @@ class AnalysisPage(QWidget):
             self.orig_lbl.setPixmap(pm)
 
             self.analyze_btn.setEnabled(True)
-            self.res_icon.setText("🔍")
             self.res_title.setText("Ready")
             self.res_title.setStyleSheet("color: #6366f1;")
             self.conf_label.setText("")
@@ -252,8 +263,8 @@ class AnalysisPage(QWidget):
             self.hm_lbl.setText("No heatmap generated")
 
             fn = os.path.basename(path)
-            if len(fn) > 30: fn = fn[:27] + "…"
-            self._set_status(f"✓  Loaded: {fn}", "#10b981")
+            if len(fn) > 30: fn = fn[:27] + "..."
+            self._set_status(f"Loaded: {fn}", "#10b981")
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Could not load image:\n\n{e}")
 
@@ -262,10 +273,9 @@ class AnalysisPage(QWidget):
             return
 
         self.analyze_btn.setEnabled(False)
-        self.res_icon.setText("⏳")
-        self.res_title.setText("Processing…")
+        self.res_title.setText("Processing...")
         self.res_title.setStyleSheet("color: #94a3b8;")
-        self._set_status("⟳  Running AI inference…", "#f59e0b")
+        self._set_status("Running AI inference...", "#f59e0b")
 
         self._worker = _AnalysisWorker(self.predictor, self.gradcam, self.current_path, self.orig_img)
         self._worker.result.connect(self._on_result)
@@ -274,12 +284,10 @@ class AnalysisPage(QWidget):
 
     def _on_result(self, label, confidence, overlay_pil):
         if label == "Tumor":
-            self.res_icon.setText("⚠️")
             self.res_title.setText("TUMOR DETECTED")
             self.res_title.setStyleSheet("color: #ef4444; font-size: 20px; font-weight: 700;")
             self.conf_bar.setObjectName("dangerBar")
         else:
-            self.res_icon.setText("✅")
             self.res_title.setText("NO TUMOR DETECTED")
             self.res_title.setStyleSheet("color: #10b981; font-size: 20px; font-weight: 700;")
             self.conf_bar.setObjectName("successBar")
@@ -295,7 +303,7 @@ class AnalysisPage(QWidget):
             self.hm_lbl.setPixmap(pm)
             self.hm_lbl.setText("")
         else:
-            self.hm_lbl.setText("❌ Grad-CAM Error")
+            self.hm_lbl.setText("Grad-CAM Error")
 
         database.save_examination(
             patient_id=self.pid, examiner_id=self.eid,
@@ -305,15 +313,14 @@ class AnalysisPage(QWidget):
         )
 
         if confidence < 0.65:
-            self._set_status("⚠  Done — low confidence", "#f59e0b")
+            self._set_status("Done - low confidence", "#f59e0b")
         else:
-            self._set_status("✓  Analysis complete", "#10b981")
+            self._set_status("Analysis complete", "#10b981")
         self.analyze_btn.setEnabled(True)
 
     def _on_error(self, e):
         QMessageBox.critical(self, "Analysis Error", f"Error during analysis:\n\n{e}")
-        self._set_status("✗  Analysis failed", "#ef4444")
-        self.res_icon.setText("❌")
+        self._set_status("Analysis failed", "#ef4444")
         self.res_title.setText("Failed")
         self.res_title.setStyleSheet("color: #ef4444;")
         self.analyze_btn.setEnabled(True)
