@@ -1,3 +1,4 @@
+from ui.utils import show_custom_msg
 """MRI Analysis page with model loading in background thread."""
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
@@ -247,7 +248,7 @@ class AnalysisPage(QWidget):
         self._set_status("Model loaded - ready", "#10b981")
 
     def _on_model_error(self, e):
-        QMessageBox.critical(self, "Model Error", f"Failed to load model:\n\n{e}")
+        show_custom_msg(self,  "Model Error",  f"Failed to load model:\n\n{e}", is_error=True)
         self._set_status("Model loading failed", "#ef4444")
 
     def _load_image(self):
@@ -255,7 +256,7 @@ class AnalysisPage(QWidget):
         if not path:
             return
         if not validate_image_file(path):
-            QMessageBox.critical(self, "Invalid File", "Please select a valid image (PNG/JPG/JPEG).")
+            show_custom_msg(self,  "Invalid File",  "Please select a valid image (PNG/JPG/JPEG, is_error=True).")
             return
         try:
             self.current_path = path
@@ -277,7 +278,7 @@ class AnalysisPage(QWidget):
             if len(fn) > 30: fn = fn[:27] + "..."
             self._set_status(f"Loaded: {fn}", "#10b981")
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Could not load image:\n\n{e}")
+            show_custom_msg(self,  "Error",  f"Could not load image:\n\n{e}", is_error=True)
 
     def _analyze(self):
         if not self.current_path or not self.predictor:
@@ -381,7 +382,7 @@ class AnalysisPage(QWidget):
         self.analyze_btn.setEnabled(True)
 
     def _on_error(self, e):
-        QMessageBox.critical(self, "Analysis Error", f"Error during analysis:\n\n{e}")
+        show_custom_msg(self,  "Analysis Error",  f"Error during analysis:\n\n{e}", is_error=True)
         self._set_status("Analysis failed", "#ef4444")
         self.res_title.setText("Failed")
         self.res_title.setStyleSheet("color: #ef4444;")
@@ -397,7 +398,7 @@ class AnalysisPage(QWidget):
         
         info = database.get_patient_info(self.pid)
         if not info:
-            QMessageBox.critical(self, "Error", "Patient info not found.")
+            show_custom_msg(self,  "Error",  "Patient info not found.", is_error=True)
             return
             
         p_name = info[1].replace(' ', '_')
@@ -438,7 +439,7 @@ class AnalysisPage(QWidget):
             except Exception as le:
                 print(f"[Audit Log Error] Failed logging event: {le}")
 
-            QMessageBox.information(self, "Export Successful", f"Encrypted diagnostic report saved securely as:\n{os.path.basename(fn)}\n\nDocument Password: {doc_password}")
+            show_custom_msg(self, "Export Successful", f"Encrypted diagnostic report saved securely as:\n{os.path.basename(fn)}\n\nDocument Password: {doc_password}")
             
             # Auto-open
             if os.name == 'nt':
@@ -449,4 +450,4 @@ class AnalysisPage(QWidget):
                 subprocess.call(['xdg-open', fn])
                 
         except Exception as ex:
-            QMessageBox.critical(self, "Error", f"Could not generate diagnostic report:\n{ex}")
+            show_custom_msg(self,  "Error",  f"Could not generate diagnostic report:\n{ex}", is_error=True)

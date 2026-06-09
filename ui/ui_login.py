@@ -44,35 +44,35 @@ class LoginWindow(QWidget):
         form_lay.addWidget(title)
 
         sub = QLabel("Clinical AI Suite")
-        sub.setStyleSheet("color: #94a3b8; font-family: 'Inter'; font-size: 14px; font-weight: 500;")
+        sub.setStyleSheet("color: #cccccc; font-family: 'Inter'; font-size: 14px; font-weight: 500;")
         form_lay.addWidget(sub)
         form_lay.addSpacing(32)
 
         signin = QLabel("Sign in to continue")
-        signin.setStyleSheet("color: #cbd5e1; font-family: 'Inter'; font-size: 15px;")
+        signin.setStyleSheet("color: #aaaaaa; font-family: 'Inter'; font-size: 15px;")
         form_lay.addWidget(signin)
         form_lay.addSpacing(24)
 
         # Username
         ul = QLabel("USERNAME")
-        ul.setStyleSheet("color: #94a3b8; font-size: 11px; font-weight: bold; text-transform: uppercase;")
+        ul.setStyleSheet("color: #999999; font-size: 11px; font-weight: bold; text-transform: uppercase;")
         form_lay.addWidget(ul)
         self.username = QLineEdit()
         self.username.setPlaceholderText("Enter username")
-        self.username.setStyleSheet("border: 1px solid #334155; border-radius: 6px; padding: 10px; color: white; font-size: 14px; background-color: #1e293b;")
+        self.username.setStyleSheet("border: 1px solid #333333; border-radius: 6px; padding: 10px; color: white; font-size: 14px; background-color: #000000;")
         self.username.setMinimumHeight(44)
         form_lay.addWidget(self.username)
         form_lay.addSpacing(16)
 
         # Password
         pl = QLabel("PASSWORD")
-        pl.setStyleSheet("color: #94a3b8; font-size: 11px; font-weight: bold; text-transform: uppercase;")
+        pl.setStyleSheet("color: #999999; font-size: 11px; font-weight: bold; text-transform: uppercase;")
         form_lay.addWidget(pl)
 
         self.password = QLineEdit()
         self.password.setPlaceholderText("Enter password")
         self.password.setEchoMode(QLineEdit.EchoMode.Password)
-        self.password.setStyleSheet("border: 1px solid #334155; border-radius: 6px; padding: 10px; color: white; font-size: 14px; background-color: #1e293b;")
+        self.password.setStyleSheet("border: 1px solid #333333; border-radius: 6px; padding: 10px; color: white; font-size: 14px; background-color: #000000;")
         self.password.setMinimumHeight(44)
         form_lay.addWidget(self.password)
         form_lay.addSpacing(24)
@@ -81,14 +81,15 @@ class LoginWindow(QWidget):
 
         # Login Button
         btn = QPushButton("Secure Login →")
+        btn.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         btn.setStyleSheet("""
             QPushButton {
-                background-color: #6366f1; color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 15px;
+                background-color: white; color: black; border: none; border-radius: 6px; font-weight: bold; font-size: 15px; margin: 0px; padding: 10px;
             }
-            QPushButton:hover { background-color: #4f46e5; }
-            QPushButton:pressed { background-color: #4338ca; }
+            QPushButton:hover { background-color: #e0e0e0; }
+            QPushButton:pressed { background-color: #cccccc; }
         """)
-        btn.setMinimumHeight(48)
+        btn.setMinimumHeight(44)
         btn.setCursor(Qt.CursorShape.PointingHandCursor)
         btn.clicked.connect(self._login)
         form_lay.addWidget(btn)
@@ -115,8 +116,8 @@ class LoginWindow(QWidget):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         
-        # 1. Fill entire background with dark slate (left side)
-        painter.fillRect(self.rect(), QColor("#0f172a"))
+        # 1. Fill entire background with black (left side)
+        painter.fillRect(self.rect(), QColor("#000000"))
         
         # 2. Draw the diagonal slash dark background (right side)
         w = self.width()
@@ -162,7 +163,7 @@ class LoginWindow(QWidget):
             
             painter.drawPixmap(x_offset, y_offset, scaled_pixmap)
         else:
-            painter.fillPath(path, QColor("#ffffff"))  # White fallback
+            painter.fillPath(path, QColor("#111111"))  # Fallback
             
         painter.restore()
 
@@ -171,20 +172,23 @@ class LoginWindow(QWidget):
         msg.setWindowTitle(title)
         msg.setText(text)
         
+        msg.setStandardButtons(QMessageBox.StandardButton.NoButton)
+        msg.addButton("OK", QMessageBox.ButtonRole.AcceptRole)
+
         # Professional clinical styling for dialogs
         if is_error:
             msg.setStyleSheet("""
-                QMessageBox { background-color: #0f172a; }
+                QMessageBox { background-color: #000000; }
                 QLabel { color: #fca5a5; font-size: 14px; font-weight: bold; font-family: 'Inter'; }
-                QPushButton { background-color: #ef4444; color: white; border-radius: 6px; padding: 8px 16px; font-weight: bold; }
-                QPushButton:hover { background-color: #dc2626; }
+                QPushButton { background-color: #ffffff; color: black; border-radius: 6px; padding: 8px 16px; font-weight: bold; }
+                QPushButton:hover { background-color: #e0e0e0; }
             """)
         else:
             msg.setStyleSheet("""
-                QMessageBox { background-color: #0f172a; }
-                QLabel { color: #cbd5e1; font-size: 14px; font-weight: bold; font-family: 'Inter'; }
-                QPushButton { background-color: #6366f1; color: white; border-radius: 6px; padding: 8px 16px; font-weight: bold; }
-                QPushButton:hover { background-color: #4f46e5; }
+                QMessageBox { background-color: #000000; }
+                QLabel { color: #ffffff; font-size: 14px; font-weight: bold; font-family: 'Inter'; }
+                QPushButton { background-color: #ffffff; color: black; border-radius: 6px; padding: 8px 16px; font-weight: bold; }
+                QPushButton:hover { background-color: #e0e0e0; }
             """)
         msg.exec()
 

@@ -1,3 +1,4 @@
+from ui.utils import show_custom_msg
 """Patient selection, settings, and add examiner pages with rich clinical layouts."""
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton,
@@ -129,12 +130,12 @@ class ExaminerRow(QFrame):
         if self.pg_parent and hasattr(self.pg_parent, 'mw') and self.pg_parent.mw.examiner_id == eid:
             btn.setText("Current User")
             btn.setEnabled(False)
-            btn.setStyleSheet("QPushButton { background-color: #334155; color: #94a3b8; padding: 6px 12px; border-radius: 4px; font-weight: bold; font-size: 11px; border: none; }")
+            
         else:
             if is_active:
-                btn.setStyleSheet("QPushButton { background-color: #ef4444; color: white; padding: 6px 12px; border-radius: 4px; font-weight: bold; font-size: 11px; border: none; } QPushButton:hover { background-color: #dc2626; }")
+                btn.setStyleSheet("background-color: #ef4444; color: white; border-radius: 6px;")
             else:
-                btn.setStyleSheet("QPushButton { background-color: #10b981; color: white; padding: 6px 12px; border-radius: 4px; font-weight: bold; font-size: 11px; border: none; } QPushButton:hover { background-color: #059669; }")
+                btn.setStyleSheet("background-color: #10b981; color: white; border-radius: 6px;")
             btn.setCursor(Qt.CursorShape.PointingHandCursor)
             btn.clicked.connect(self._toggle)
             
@@ -152,7 +153,7 @@ class NewPatientDialog(QDialog):
         super().__init__(parent)
         self.setWindowTitle("Register New Patient")
         self.setFixedSize(450, 360)
-        self.setStyleSheet("background-color: #0f172a; color: white;")
+        
         
         lay = QVBoxLayout(self)
         lay.setContentsMargins(24, 24, 24, 24)
@@ -182,7 +183,7 @@ class NewPatientDialog(QDialog):
         self.pgender = QComboBox()
         self.pgender.addItems(["Male", "Female", "Other"])
         self.pgender.setMinimumHeight(42)
-        self.pgender.setStyleSheet("QComboBox { border: 1px solid #334155; border-radius: 6px; padding-left: 10px; background-color: #1e293b; color: white; }")
+        
         form_grid.addWidget(self.pgender, 3, 1)
 
         form_grid.addWidget(QLabel("Contact Info"), 4, 0, 1, 2)
@@ -215,7 +216,7 @@ class PatientSelectionPage(QWidget):
         wl = QVBoxLayout()
         wl.setSpacing(3)
         title = QLabel("Active Roster")
-        title.setStyleSheet("font-size: 28px; font-weight: 700; color: white;")
+        title.setStyleSheet("font-size: 28px; font-weight: 700; color: black;")
         wl.addWidget(title)
         
         sub = QLabel("Pending and active neurological scans requiring analysis.")
@@ -235,7 +236,7 @@ class PatientSelectionPage(QWidget):
         new_btn = QPushButton("+ NEW PATIENT")
         new_btn.setObjectName("accentBtn")
         new_btn.setFixedSize(140, 38)
-        new_btn.setStyleSheet("background-color: #c0c1ff; color: #0f172a; font-weight: bold; font-size: 11px;")
+        
         new_btn.clicked.connect(self._show_new_patient_dialog)
         hdr.addWidget(new_btn)
         
@@ -260,7 +261,7 @@ class PatientSelectionPage(QWidget):
         widths = [100, 160, 140, 160, 120, 200]
         for c, w in zip(cols, widths):
             lbl = QLabel(c)
-            lbl.setStyleSheet("color: #94a3b8; font-size: 11px; font-weight: bold; text-transform: uppercase;")
+            lbl.setStyleSheet("color: #666666; font-size: 11px; font-weight: bold; text-transform: uppercase;")
             if w > 0:
                 lbl.setFixedWidth(w)
             th.addWidget(lbl)
@@ -268,7 +269,7 @@ class PatientSelectionPage(QWidget):
         
         div = QFrame()
         div.setFixedHeight(1)
-        div.setStyleSheet("background-color: #334155; margin-top: 10px; margin-bottom: 10px;")
+        div.setStyleSheet("background-color: #e0e0e0; margin-top: 10px; margin-bottom: 10px;")
         tl.addWidget(div)
 
         # Scroll area for rows
@@ -286,7 +287,7 @@ class PatientSelectionPage(QWidget):
         
         # Footer
         self.footer_lbl = QLabel()
-        self.footer_lbl.setStyleSheet("color: #94a3b8; font-size: 11px;")
+        self.footer_lbl.setStyleSheet("color: #666666; font-size: 11px;")
         tl.addSpacing(10)
         tl.addWidget(self.footer_lbl)
         
@@ -345,7 +346,7 @@ class PatientSelectionPage(QWidget):
             
             vl = QHBoxLayout()
             v = QLabel(str(val))
-            v.setStyleSheet("color: white; font-size: 24px; font-weight: bold;")
+            v.setStyleSheet("color: black; font-size: 24px; font-weight: bold;")
             vl.addWidget(v)
             if subtitle:
                 sl = QLabel(subtitle)
@@ -375,7 +376,7 @@ class PatientSelectionPage(QWidget):
                 if i < len(self.patients) - 1:
                     row_div = QFrame()
                     row_div.setFixedHeight(1)
-                    row_div.setStyleSheet("background-color: #1e293b;")
+                    row_div.setStyleSheet("background-color: #f5f5f5;")
                     self.list_lay.addWidget(row_div)
 
         self.list_lay.addStretch()
@@ -404,19 +405,19 @@ class PatientSelectionPage(QWidget):
         # Widths must match header widths
         # PATIENT ID
         id_lbl = QLabel(f"ND-{pid:04d}")
-        id_lbl.setStyleSheet("color: #cbd5e1; font-size: 12px; font-weight: bold;")
+        id_lbl.setStyleSheet("color: #333333; font-size: 12px; font-weight: bold;")
         id_lbl.setFixedWidth(100)
         rl.addWidget(id_lbl)
         
         # NAME
         n_lbl = QLabel(name)
-        n_lbl.setStyleSheet("color: white; font-size: 13px; font-weight: bold;")
+        n_lbl.setStyleSheet("color: black; font-size: 13px; font-weight: bold;")
         n_lbl.setFixedWidth(160)
         rl.addWidget(n_lbl)
         
         # SCAN DATE
         d_lbl = QLabel(date_str)
-        d_lbl.setStyleSheet("color: #cbd5e1; font-size: 12px;")
+        d_lbl.setStyleSheet("color: #333333; font-size: 12px;")
         d_lbl.setFixedWidth(140)
         rl.addWidget(d_lbl)
         
@@ -458,24 +459,14 @@ class PatientSelectionPage(QWidget):
         btn_lay.setSpacing(8)
         
         btn_scan = QPushButton("Analyze")
-        btn_scan.setStyleSheet("""
-            QPushButton {
-                background-color: transparent; border: 1px solid #4f46e5; color: #818cf8; border-radius: 6px; font-weight: bold; font-size: 11px;
-            }
-            QPushButton:hover { background-color: rgba(79, 70, 229, 0.1); }
-        """)
+        btn_scan.setObjectName("ghostBtn")
         btn_scan.setFixedSize(85, 32)
         btn_scan.setCursor(Qt.CursorShape.PointingHandCursor)
         btn_scan.clicked.connect(lambda _, x=pid: self._go_analyze(x))
         btn_lay.addWidget(btn_scan)
         
         btn_hist = QPushButton("History")
-        btn_hist.setStyleSheet("""
-            QPushButton {
-                background-color: transparent; border: 1px solid #475569; color: #cbd5e1; border-radius: 6px; font-weight: bold; font-size: 11px;
-            }
-            QPushButton:hover { background-color: rgba(71, 85, 105, 0.3); }
-        """)
+        btn_hist.setObjectName("ghostBtn")
         btn_hist.setFixedSize(85, 32)
         btn_hist.setCursor(Qt.CursorShape.PointingHandCursor)
         btn_hist.clicked.connect(lambda _, x=pid: self._go_history(x))
@@ -510,7 +501,7 @@ class PatientSelectionPage(QWidget):
         if dialog.exec() == QDialog.DialogCode.Accepted:
             n = dialog.pname.text().strip()
             if not n:
-                QMessageBox.warning(self, "Warning", "Patient Name is required.")
+                show_custom_msg(self,  "Warning",  "Patient Name is required.", is_error=True)
                 return
             
             age = None
@@ -532,7 +523,7 @@ class PatientSelectionPage(QWidget):
             except Exception as le:
                 pass
 
-            QMessageBox.information(self, "Success", "Patient successfully added to local database.")
+            show_custom_msg(self, "Success", "Patient successfully added to local database.")
             
             # Navigate immediately to Analyze screen for new patient
             self._go_analyze(pid)
@@ -634,7 +625,7 @@ class SettingsPage(QWidget):
 
         # Badge panel
         badge = QFrame()
-        badge.setStyleSheet("background-color: #0f172a; border: 1px solid #334155; border-radius: 10px;")
+        badge.setObjectName("badge")
         bl = QVBoxLayout(badge)
         bl.setContentsMargins(18, 14, 18, 14)
         bl.setSpacing(6)
@@ -715,7 +706,7 @@ class SettingsPage(QWidget):
         
         val = QLabel(value)
         val.setFont(QFont("Segoe UI", 9, QFont.Weight.Bold))
-        val.setStyleSheet("color: #e2e8f0;")
+        val.setStyleSheet("color: #0f172a;")
         fl.addWidget(val)
         return f
 
@@ -734,9 +725,9 @@ class SettingsPage(QWidget):
             except Exception as le:
                 print(f"[Audit Log Error] Failed logging event: {le}")
 
-            QMessageBox.information(self, "Success", "Display name saved successfully.")
+            show_custom_msg(self, "Success", "Display name saved successfully.")
         else:
-            QMessageBox.warning(self, "Warning", "Display name cannot be empty.")
+            show_custom_msg(self,  "Warning",  "Display name cannot be empty.", is_error=True)
 
     def _save_pw(self):
         p = self.pw_e.text().strip()
@@ -753,10 +744,10 @@ class SettingsPage(QWidget):
             except Exception as le:
                 print(f"[Audit Log Error] Failed logging event: {le}")
 
-            QMessageBox.information(self, "Success", "Security credentials updated successfully.")
+            show_custom_msg(self, "Success", "Security credentials updated successfully.")
             self.pw_e.clear()
         else:
-            QMessageBox.warning(self, "Warning", "Password cannot be empty.")
+            show_custom_msg(self,  "Warning",  "Password cannot be empty.", is_error=True)
 
     def _create_threshold_card(self):
         from core import config_registry
@@ -844,9 +835,9 @@ class SettingsPage(QWidget):
             except Exception as le:
                 print(f"[Audit Log Error] Failed logging event: {le}")
 
-            QMessageBox.information(self, "Success", "Decision thresholds and clinical configuration registry successfully saved.")
+            show_custom_msg(self, "Success", "Decision thresholds and clinical configuration registry successfully saved.")
         else:
-            QMessageBox.critical(self, "Error", "Failed to save clinical configuration.")
+            show_custom_msg(self,  "Error",  "Failed to save clinical configuration.", is_error=True)
 
     def _create_logs_card(self):
         card = _card()
@@ -886,25 +877,25 @@ class SettingsPage(QWidget):
         # Stylesheet for custom dark table theme inside slate cards
         self.logs_table.setStyleSheet("""
             QTableWidget {
-                background-color: #0f172a;
-                border: 1px solid #334155;
-                gridline-color: #1e293b;
+                background-color: #ffffff;
+                border: 1px solid #cbd5e1;
+                gridline-color: #e2e8f0;
                 border-radius: 8px;
-                color: #e2e8f0;
+                color: #0f172a;
             }
             QHeaderView::section {
-                background-color: #1e293b;
-                color: #818cf8;
+                background-color: #f1f5f9;
+                color: #475569;
                 padding: 6px;
-                border: 1px solid #334155;
+                border: 1px solid #cbd5e1;
                 font-weight: bold;
             }
             QTableWidget::item {
                 padding: 8px;
             }
             QTableWidget::item:selected {
-                background-color: #6366f1;
-                color: white;
+                background-color: #e2e8f0;
+                color: #0f172a;
             }
         """)
 
@@ -1113,7 +1104,7 @@ class AddExaminerPage(QWidget):
     def _save(self):
         u, n = self.uname.text().strip(), self.fname.text().strip()
         if not all([u, n]):
-            QMessageBox.warning(self, "Warning", "Username and Full Name are strictly required.")
+            show_custom_msg(self,  "Warning",  "Username and Full Name are strictly required.", is_error=True)
             return
         ok = database.add_examiner(u, "", n, self.role_cb.currentText(), self.dept_cb.currentText())
         if ok:
@@ -1127,11 +1118,11 @@ class AddExaminerPage(QWidget):
             except Exception as le:
                 print(f"[Audit Log Error] Failed logging event: {le}")
 
-            QMessageBox.information(self, "Success", f"Clinical credentials for operator '{u}' successfully generated.")
+            show_custom_msg(self, "Success", f"Clinical credentials for operator '{u}' successfully generated.")
             self.uname.clear(); self.fname.clear()
             self._refresh_roster()
         else:
-            QMessageBox.critical(self, "Error", "Registration failed: Username already exists.")
+            show_custom_msg(self,  "Error",  "Registration failed: Username already exists.", is_error=True)
 
 
 class HospitalAnalyticsPage(QWidget):
@@ -1279,7 +1270,7 @@ class HospitalAnalyticsPage(QWidget):
         fig2 = Figure(figsize=(6, 4.5), facecolor='#1e293b')
         canvas2 = FigureCanvas(fig2)
         ax2 = fig2.add_subplot(111)
-        ax2.set_facecolor('#0f172a') # dark slate background grid
+        ax2.set_facecolor('#ffffff') # dark slate background grid
         
         timeline = stats["timeline"]
         if timeline:
@@ -1319,7 +1310,7 @@ class HospitalAnalyticsPage(QWidget):
         
         v = QLabel(val)
         v.setFont(QFont("Segoe UI", 20, QFont.Weight.Bold))
-        v.setStyleSheet("color: white;")
+        v.setStyleSheet("color: black;")
         l.addWidget(v)
         
         t = QLabel(title)

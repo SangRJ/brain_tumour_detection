@@ -1,3 +1,4 @@
+from ui.utils import show_custom_msg
 """Patient history page with PDF report generation."""
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
@@ -40,7 +41,7 @@ class PatientHistoryPage(QWidget):
         lay.addLayout(top_bar)
         
         title = QLabel("Patient History Record")
-        title.setStyleSheet("font-size: 28px; font-weight: 700; color: white;")
+        title.setStyleSheet("font-size: 28px; font-weight: 700; ")
         lay.addWidget(title)
         
         sub = QLabel(f"Past neurological scans and diagnostic timeline for {p_name}.")
@@ -66,7 +67,7 @@ class PatientHistoryPage(QWidget):
             t = QLabel(title)
             t.setStyleSheet(f"color: {color}; font-size: 11px; font-weight: bold; text-transform: uppercase;")
             v = QLabel(str(val))
-            v.setStyleSheet("color: white; font-size: 24px; font-weight: bold;")
+            v.setStyleSheet(" font-size: 24px; font-weight: bold;")
             l.addWidget(t)
             l.addWidget(v)
             return c
@@ -123,7 +124,7 @@ class PatientHistoryPage(QWidget):
                 if i < len(self.history) - 1:
                     row_div = QFrame()
                     row_div.setFixedHeight(1)
-                    row_div.setStyleSheet("background-color: #1e293b;")
+                    row_div.setStyleSheet("")
                     self.cl.addWidget(row_div)
 
         self.cl.addStretch()
@@ -150,7 +151,7 @@ class PatientHistoryPage(QWidget):
         rl.addWidget(d_lbl)
         
         f_lbl = QLabel(filename[:18] + "..." if len(filename)>20 else filename)
-        f_lbl.setStyleSheet("color: white; font-size: 13px; font-weight: bold;")
+        f_lbl.setStyleSheet(" font-size: 13px; font-weight: bold;")
         f_lbl.setFixedWidth(160)
         rl.addWidget(f_lbl)
         
@@ -183,17 +184,7 @@ class PatientHistoryPage(QWidget):
         rl.addWidget(e_lbl)
         
         btn = QPushButton("Print")
-        btn.setStyleSheet("""
-            QPushButton {
-                background-color: transparent;
-                border: 1px solid #4f46e5;
-                color: #818cf8;
-                border-radius: 6px;
-                font-weight: bold;
-                font-size: 11px;
-            }
-            QPushButton:hover { background-color: rgba(79, 70, 229, 0.1); }
-        """)
+        btn.setObjectName("ghostBtn")
         btn.setFixedSize(70, 28)
         btn.setCursor(Qt.CursorShape.PointingHandCursor)
         btn.clicked.connect(lambda _, e=exam: self._gen_single_report(e))
@@ -207,7 +198,7 @@ class PatientHistoryPage(QWidget):
         
         info = database.get_patient_info(self.pid)
         if not info:
-            QMessageBox.critical(self, "Error", "Patient info not found.")
+            show_custom_msg(self,  "Error",  "Patient info not found.", is_error=True)
             return
 
         p_name = info[1].replace(' ', '_')
@@ -249,7 +240,7 @@ class PatientHistoryPage(QWidget):
             except Exception as le:
                 print(f"[Audit Log Error] Failed logging event: {le}")
 
-            QMessageBox.information(self, "Export Successful", f"Encrypted diagnostic report saved securely as:\n{fn}\n\nDocument Password: {doc_password}")
+            show_custom_msg(self, "Export Successful", f"Encrypted diagnostic report saved securely as:\n{fn}\n\nDocument Password: {doc_password}")
             
             # Auto-open
             if os.name == 'nt':
@@ -260,12 +251,12 @@ class PatientHistoryPage(QWidget):
                 subprocess.call(['xdg-open', fn])
                 
         except Exception as ex:
-            QMessageBox.critical(self, "Error", f"Could not generate diagnostic report:\n{ex}")
+            show_custom_msg(self,  "Error",  f"Could not generate diagnostic report:\n{ex}", is_error=True)
 
     def _gen_pdf(self):
         info = database.get_patient_info(self.pid)
         if not info:
-            QMessageBox.critical(self, "Error", "Patient info not found.")
+            show_custom_msg(self,  "Error",  "Patient info not found.", is_error=True)
             return
 
         from core import config_registry
@@ -415,7 +406,7 @@ class PatientHistoryPage(QWidget):
             except Exception as le:
                 print(f"[Audit Log Error] Failed logging event: {le}")
 
-            QMessageBox.information(self, "Export Successful", f"Encrypted timeline report saved securely as:\n{os.path.basename(fn)}\n\nDocument Password: {doc_password}")
+            show_custom_msg(self, "Export Successful", f"Encrypted timeline report saved securely as:\n{os.path.basename(fn)}\n\nDocument Password: {doc_password}")
             if os.name == 'nt':
                 os.startfile(fn)
             elif os.uname().sysname == 'Darwin':
@@ -423,4 +414,4 @@ class PatientHistoryPage(QWidget):
             else:
                 subprocess.call(['xdg-open', fn])
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Could not generate PDF: {e}")
+            show_custom_msg(self,  "Error",  f"Could not generate PDF: {e}", is_error=True)
