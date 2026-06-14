@@ -53,7 +53,7 @@ class ClinicalReportGenerator:
         pdf.set_font("Helvetica", "B", 20)
         pdf.cell(0, 10, hospital_name.upper(), new_x="LMARGIN", new_y="NEXT", align="C")
         pdf.set_font("Helvetica", "I", 10)
-        pdf.cell(0, 5, "AI-Powered Neurological Image Analysis & Diagnostic Portal", new_x="LMARGIN", new_y="NEXT", align="C")
+        pdf.cell(0, 5, "Brain Tumour Detection System", new_x="LMARGIN", new_y="NEXT", align="C")
         
         pdf.ln(20)
 

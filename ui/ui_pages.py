@@ -460,14 +460,14 @@ class PatientSelectionPage(QWidget):
         
         btn_scan = QPushButton("Analyze")
         btn_scan.setObjectName("ghostBtn")
-        btn_scan.setFixedSize(85, 32)
+        btn_scan.setFixedSize(90, 32)
         btn_scan.setCursor(Qt.CursorShape.PointingHandCursor)
         btn_scan.clicked.connect(lambda _, x=pid: self._go_analyze(x))
         btn_lay.addWidget(btn_scan)
         
         btn_hist = QPushButton("History")
         btn_hist.setObjectName("ghostBtn")
-        btn_hist.setFixedSize(85, 32)
+        btn_hist.setFixedSize(90, 32)
         btn_hist.setCursor(Qt.CursorShape.PointingHandCursor)
         btn_hist.clicked.connect(lambda _, x=pid: self._go_history(x))
         btn_lay.addWidget(btn_hist)

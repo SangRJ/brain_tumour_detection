@@ -92,7 +92,7 @@ class PatientHistoryPage(QWidget):
         widths = [140, 160, 140, 100, 140, 100]
         for c, w in zip(cols, widths):
             lbl = QLabel(c)
-            lbl.setStyleSheet("color: #94a3b8; font-size: 11px; font-weight: bold; text-transform: uppercase;")
+            lbl.setStyleSheet("color: #64748b; font-size: 11px; font-weight: bold; text-transform: uppercase;")
             if w > 0:
                 lbl.setFixedWidth(w)
             th.addWidget(lbl)
@@ -124,7 +124,7 @@ class PatientHistoryPage(QWidget):
                 if i < len(self.history) - 1:
                     row_div = QFrame()
                     row_div.setFixedHeight(1)
-                    row_div.setStyleSheet("")
+                    row_div.setStyleSheet("background-color: #e2e8f0;")
                     self.cl.addWidget(row_div)
 
         self.cl.addStretch()
@@ -146,7 +146,7 @@ class PatientHistoryPage(QWidget):
 
         # Widths must match header widths
         d_lbl = QLabel(date_str)
-        d_lbl.setStyleSheet("color: #cbd5e1; font-size: 13px;")
+        d_lbl.setStyleSheet("color: #475569; font-size: 13px;")
         d_lbl.setFixedWidth(140)
         rl.addWidget(d_lbl)
         
@@ -174,12 +174,12 @@ class PatientHistoryPage(QWidget):
         rl.addWidget(p_wrap)
         
         c_lbl = QLabel(f"{conf:.1f}%")
-        c_lbl.setStyleSheet("color: #cbd5e1; font-size: 13px;")
+        c_lbl.setStyleSheet("color: #475569; font-size: 13px;")
         c_lbl.setFixedWidth(100)
         rl.addWidget(c_lbl)
         
         e_lbl = QLabel(examiner)
-        e_lbl.setStyleSheet("color: #cbd5e1; font-size: 13px;")
+        e_lbl.setStyleSheet("color: #475569; font-size: 13px;")
         e_lbl.setFixedWidth(140)
         rl.addWidget(e_lbl)
         

@@ -1,11 +1,10 @@
 """
 config_registry.py — Central Clinical Configuration & Decision Threshold Registry.
-Handles JSON persistence for confidence limits, clinic names, and diagnostic constraints.
+Handles persistence for confidence limits, clinic names, and diagnostic constraints in the DB.
 """
 import os
 import json
-
-CONFIG_FILE = "config.json"
+from core import database
 
 DEFAULT_CONFIG = {
     "confidence_threshold": 0.50,
@@ -16,33 +15,49 @@ DEFAULT_CONFIG = {
     "enable_gradcam": True
 }
 
+def _init_config_table():
+    """Ensure the SystemConfig table exists in the database."""
+    conn = database.get_connection()
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS SystemConfig (
+            key TEXT PRIMARY KEY,
+            value TEXT
+        )
+    ''')
+    conn.commit()
+    conn.close()
 
 def load_config():
-    """Load configuration from JSON file. Creates with defaults if not present."""
-    base_dir = os.path.dirname(os.path.abspath(__file__))
-    path = os.path.join(base_dir, CONFIG_FILE)
+    """Load configuration from database. Creates with defaults if not present."""
+    _init_config_table()
+    conn = database.get_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT key, value FROM SystemConfig')
+    rows = cursor.fetchall()
+    conn.close()
     
-    if not os.path.exists(path):
+    if not rows:
         save_config(DEFAULT_CONFIG)
         return DEFAULT_CONFIG.copy()
         
-    try:
-        with open(path, "r") as f:
-            cfg = json.load(f)
-            # Guarantee all default keys are present
-            for k, v in DEFAULT_CONFIG.items():
-                if k not in cfg:
-                    cfg[k] = v
-            return cfg
-    except Exception as e:
-        print(f"[Config Registry Error] Failed to read configuration: {e}")
-        return DEFAULT_CONFIG.copy()
-
+    cfg = {}
+    for k, v in rows:
+        try:
+            cfg[k] = json.loads(v)
+        except Exception:
+            cfg[k] = v
+            
+    # Guarantee all default keys are present
+    for k, v in DEFAULT_CONFIG.items():
+        if k not in cfg:
+            cfg[k] = v
+            
+    return cfg
 
 def save_config(config_dict):
-    """Save the clinical configuration to config.json."""
-    base_dir = os.path.dirname(os.path.abspath(__file__))
-    path = os.path.join(base_dir, CONFIG_FILE)
+    """Save the clinical configuration to the database."""
+    _init_config_table()
     
     try:
         # Validate data types
@@ -54,13 +69,19 @@ def save_config(config_dict):
         validated["audit_retention_days"] = int(config_dict.get("audit_retention_days", 90))
         validated["enable_gradcam"] = bool(config_dict.get("enable_gradcam", True))
         
-        with open(path, "w") as f:
-            json.dump(validated, f, indent=4)
+        conn = database.get_connection()
+        cursor = conn.cursor()
+        for k, v in validated.items():
+            cursor.execute('''
+                INSERT INTO SystemConfig (key, value) VALUES (?, ?)
+                ON CONFLICT(key) DO UPDATE SET value=excluded.value
+            ''', (k, json.dumps(v)))
+        conn.commit()
+        conn.close()
         return True
     except Exception as e:
-        print(f"[Config Registry Error] Failed to write configuration: {e}")
+        print(f"[Config Registry Error] Failed to write configuration to DB: {e}")
         return False
-
 
 def get_value(key):
     """Safely fetch a specific configuration value."""

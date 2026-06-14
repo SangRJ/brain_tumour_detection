@@ -220,6 +220,7 @@ QPushButton#ghostBtn {
     background-color: #ffffff;
     color: #0f172a;
     border: 1px solid #cbd5e1;
+    padding: 6px 12px;
 }
 QPushButton#ghostBtn:hover { background-color: #f8fafc; border-color: #94a3b8; }
 
@@ -290,7 +291,8 @@ QMessageBox {
 QMessageBox QLabel {
     color: #0f172a;
     font-size: 14px;
-    min-width: 280px;
+    min-width: 550px;
+    padding-right: 20px;
 }
 QMessageBox QPushButton {
     background-color: #000000;

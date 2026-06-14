@@ -1,8 +1,0 @@
-{
-    "confidence_threshold": 0.5,
-    "critical_alert_threshold": 0.85,
-    "hospital_name": "Neural Diagnostics Center",
-    "department_name": "Neurology & Neurosurgery",
-    "audit_retention_days": 90,
-    "enable_gradcam": true
-}
